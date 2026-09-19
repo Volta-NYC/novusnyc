@@ -8,13 +8,11 @@ import { getPublicPartnerships } from "@/lib/server/publicPartnerships";
 const DESCRIPTION =
   "The chambers, business improvement districts and development corporations that introduce Novus NYC to small businesses, and what each relationship involves.";
 
-// Draft: kept out of the sitemap, nav, footer and llms.txt until approved.
 // Open Graph and Twitter are set here so the page does not inherit the root
 // layout's pricing language while the founder settles it.
 export const metadata: Metadata = {
   title: "Partnerships",
   description: DESCRIPTION,
-  robots: { index: false, follow: false },
   openGraph: { title: "Partnerships | Novus NYC", description: DESCRIPTION, images: ["/api/og"] },
   twitter: { card: "summary_large_image", title: "Partnerships | Novus NYC", description: DESCRIPTION, images: ["/api/og"] },
 };
@@ -71,6 +69,12 @@ export default async function PartnershipsPage() {
             <p id={MAP_NOTE_ID} className="sr-only">
               Select an organization to read its full description. The same descriptions are listed after the map for screen readers.
             </p>
+            <a
+              href="#what-partnering-means"
+              className="sr-only focus:not-sr-only focus:mt-4 focus:inline-block focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:font-body focus:text-sm focus:font-semibold focus:text-n-ink"
+            >
+              Skip the map
+            </a>
             <div className="-mx-5 mt-6 md:mx-0">
               <IntroductionMapSection partners={partners} describedBy={MAP_NOTE_ID} />
             </div>

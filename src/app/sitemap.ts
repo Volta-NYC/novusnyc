@@ -38,13 +38,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ── Primary pages (1.0) ────────────────────────────────────────────────
     {
       url: base,
-      lastModified: new Date("2026-09-01"),
+      lastModified: new Date("2026-09-19"),
       changeFrequency: "weekly",
       priority: 1.0,
     },
     {
       url: `${base}/partners`,
-      lastModified: new Date("2026-08-27"),
+      lastModified: new Date("2026-09-19"),
       changeFrequency: "monthly",
       priority: 1.0,
     },
@@ -64,13 +64,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // ── Section hubs (0.8) ─────────────────────────────────────────────────
     {
       url: `${base}/showcase`,
-      lastModified: new Date("2026-08-20"),
+      lastModified: new Date("2026-09-19"),
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
+      url: `${base}/partnerships`,
+      lastModified: new Date("2026-09-19"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${base}/about`,
-      lastModified: new Date("2026-09-01"),
+      lastModified: new Date("2026-09-19"),
       changeFrequency: "yearly",
       priority: 0.8,
     },
