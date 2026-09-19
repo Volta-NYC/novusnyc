@@ -72,7 +72,8 @@ export const communityPartners = [
   { name: "Cypress Hills Fulton BID", logo: "/partners/logos/cypress-hills-fulton-bid.png", website: "https://www.cypresshillsfultonbid.org/", important: false },
   { name: "Long Island City Partnership", logo: "/partners/logos/long-island-city-partnership.png", website: "https://www.longislandcityqueens.com/", important: false },
   { name: "Asian American Federation", logo: "/partners/logos/asian-american-federation.png", website: "https://www.aafederation.org/", important: false },
-  { name: "Castleton Avenue Merchants Organization", logo: "/partners/logos/castleton-avenue-merchants.png", website: "https://castleton-avenue-merchant-org.vercel.app/", important: false },
+  // Its own site is a paused draft; the Facebook page is its only public presence.
+  { name: "Castleton Avenue Merchants Organization", logo: "/partners/logos/castleton-avenue-merchants.png", website: "https://www.facebook.com/CAMOSINYC", important: false },
   { name: "Queens Economic Development Corporation", logo: "/partners/logos/queens-economic-development.png", website: "https://www.queensny.org/", important: false },
   { name: "Staten Island Business Outreach Center", logo: "/partners/logos/siboc.png", website: "https://siboc.org/", important: false },
   // No site of its own; the link that was here belonged to a different group.
