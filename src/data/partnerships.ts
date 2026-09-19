@@ -18,13 +18,15 @@ export type PartnerRole =
 export type PartnerKind =
   | "network"
   | "chamber"
+  | "agency"
   | "bid"
   | "ldc"
   | "merchant-association"
   | "community-org"
   | "program";
 
-export type PartnerSector = "citywide" | "Queens" | "Brooklyn" | "Manhattan" | "Bronx" | "Staten Island";
+export type Borough = "Queens" | "Brooklyn" | "Manhattan" | "Bronx" | "Staten Island";
+export type PartnerSector = "citywide" | Borough;
 
 export interface PartnerBusiness {
   name: string;
@@ -43,6 +45,8 @@ export interface Partnership {
   shortName: string;
   kind: PartnerKind;
   sector: PartnerSector;
+  // Citywide organizations still need a place on the map's borough ring.
+  mapSector?: Borough;
   depth: "deep" | "active";
   roles: PartnerRole[];
   summary: string;
@@ -50,7 +54,6 @@ export interface Partnership {
   heldFacts?: string[];
   businesses?: PartnerBusiness[];
   introducedBy?: Introduction[];
-  worksAlongside?: string[];
   testimonial?: { quote: string; name: string; business: string; approved: boolean };
   image?: { src: string; alt: string };
   monogram?: string;
@@ -64,72 +67,35 @@ export type PublicPartnership = Omit<Partnership, "heldFacts" | "testimonial" | 
   testimonial?: { quote: string; name: string; business: string };
 };
 
-export const ROLE_META: Record<PartnerRole, { label: string; description: string }> = {
-  "introduces-merchants": {
-    label: "Introduced merchants",
-    description: "Referred business owners who needed a website to Novus.",
-  },
-  "field-outreach": {
-    label: "Walked the corridor with us",
-    description: "Organized merchant walks and visits so the team could meet owners in person.",
-  },
-  "built-their-site": {
-    label: "We built their website",
-    description: "Novus designed and built the organization's own website.",
-  },
-  "maintains-sites": {
-    label: "Relays owner updates",
-    description: "Passes owners' changes to Novus after launch so their sites stay current.",
-  },
-  "owner-liaison": {
-    label: "Gathers owner feedback",
-    description: "Visits or follows up with owners to collect feedback, photos and menus for their drafts.",
-  },
-  "connected-network": {
-    label: "Connected us to other organizations",
-    description: "Introduced Novus to other organizations that support small businesses.",
-  },
-  event: {
-    label: "Hosted us at an event",
-    description: "Invited Novus to a neighborhood event to meet business owners.",
-  },
-  "shares-resource": {
-    label: "Shares Novus with merchants",
-    description: "Circulates Novus to local businesses as a resource for their websites.",
-  },
-  "advises-novus": {
-    label: "Advises Novus",
-    description: "Offers guidance on how Novus runs as an organization.",
-  },
+export const ROLE_LABEL: Record<PartnerRole, string> = {
+  "introduces-merchants": "introduced merchants",
+  "field-outreach": "walked the neighborhood with us",
+  "built-their-site": "we built their website",
+  "maintains-sites": "relays owner updates",
+  "owner-liaison": "gathers owner feedback",
+  "connected-network": "connected us to other organizations",
+  event: "hosted us at an event",
+  "shares-resource": "shares Novus with merchants",
+  "advises-novus": "advises Novus",
 };
 
-export const ROLE_ORDER: PartnerRole[] = [
-  "introduces-merchants",
-  "field-outreach",
-  "owner-liaison",
-  "maintains-sites",
-  "built-their-site",
-  "connected-network",
-  "event",
-  "shares-resource",
-  "advises-novus",
-];
-
-export type PartnerTone = "purple" | "orange" | "yellow";
+export type PartnerTone = "purple" | "orange";
 
 export const KIND_TONE: Record<PartnerKind, PartnerTone> = {
   network: "purple",
   chamber: "purple",
+  agency: "purple",
+  "community-org": "purple",
   bid: "orange",
   ldc: "orange",
   "merchant-association": "orange",
   program: "orange",
-  "community-org": "yellow",
 };
 
 export const KIND_LABEL: Record<PartnerKind, string> = {
   network: "Citywide network",
   chamber: "Chamber of commerce",
+  agency: "City agency",
   bid: "Business improvement district",
   ldc: "Development organization",
   "merchant-association": "Merchant association",
@@ -139,16 +105,6 @@ export const KIND_LABEL: Record<PartnerKind, string> = {
 
 export function sectorLabel(sector: PartnerSector): string {
   return sector === "citywide" ? "Citywide" : sector;
-}
-
-export function liveSiteCount(partners: { businesses?: PartnerBusiness[] }[]): number {
-  const names = new Set<string>();
-  for (const partner of partners) {
-    for (const business of partner.businesses ?? []) {
-      if (business.status === "live") names.add(business.name);
-    }
-  }
-  return names.size;
 }
 
 export const SECTOR_ORDER: PartnerSector[] = ["citywide", "Queens", "Brooklyn", "Manhattan", "Bronx", "Staten Island"];
@@ -163,11 +119,11 @@ export const partnerships: Partnership[] = [
     depth: "deep",
     roles: ["introduces-merchants", "owner-liaison", "maintains-sites"],
     summary:
-      "The Bayside Village BID introduces merchants in its district to Novus and follows up with owners so drafts get the feedback they need. After a site launches, the BID relays the owner's changes to the team, which keeps the site current.",
+      "The Bayside Village BID introduces merchants in its district to Novus and follows up with owners so drafts get the feedback they need. After a site launches, the BID passes the owner's changes to the team, which keeps the site current.",
     facts: [
-      "Walked the team through the neighborhood in March 2026.",
-      "Raised web accessibility with a merchant, and Novus brought Spin Bagel's site to the WCAG 2.1 AA standard in July 2026.",
-      "Relayed a round of Papazzio's post-launch updates, which went live in September 2026.",
+      "Walked the team through Bayside in March 2026.",
+      "Raised web accessibility with a merchant, which led Novus to bring Spin Bagel's site up to the WCAG 2.1 AA standard in July 2026.",
+      "Relayed a round of Papazzio's updates after launch in September 2026.",
     ],
     // needs founder approval
     heldFacts: ["Helped cover domain and hosting costs for merchant sites in its district."],
@@ -191,11 +147,10 @@ export const partnerships: Partnership[] = [
     depth: "deep",
     roles: ["introduces-merchants", "field-outreach", "connected-network"],
     summary:
-      "The Brooklyn Chamber of Commerce refers Brooklyn business owners to Novus and listed us as a resource in the Small Business Resource Network's referral system, where specialists across the city can find us. It also introduced us to the chamber specialists in Staten Island, Manhattan and the Bronx.",
+      "The Brooklyn Chamber of Commerce refers Brooklyn business owners to Novus. It also introduced us to the chamber specialists in Staten Island, Manhattan and the Bronx, and one of the businesses it referred later introduced us to the Local Development Corporation of East New York.",
     facts: [
-      "Listed Novus as a resource in the SBRN referral system in May 2026.",
-      "Walked Bedford and Nostrand Avenues in Bed-Stuy with the team on July 22, 2026, meeting merchants along the way.",
-      "Introduced Novus to the SBRN specialists at the Staten Island, Manhattan and Bronx chambers in July 2026.",
+      "Listed Novus as a resource in the Small Business Resource Network's referral system in May 2026.",
+      "Walked Bed-Stuy with the team in July 2026, meeting merchants along the way.",
     ],
     businesses: [
       { name: "Golden Rose Employment Agency", status: "live", url: "https://agenciadeempleosnyc.com" },
@@ -214,10 +169,10 @@ export const partnerships: Partnership[] = [
     depth: "deep",
     roles: ["introduces-merchants", "field-outreach", "advises-novus"],
     summary:
-      "Cypress Hills Local Development Corporation refers entrepreneurs from its Business Partners program to Novus, and the team reports each project's progress back to the program. Its Cypress Hills Fulton BID walked Fulton Street with us on March 9 to meet merchants. CHLDC staff have also offered Novus guidance on operations and client management.",
+      "Cypress Hills Local Development Corporation refers entrepreneurs from its Business Partners program to Novus, and the team reports each project's progress back to the program. CHLDC staff have also given Novus guidance on operations and client management.",
     facts: [
-      "Walked Fulton Street with the team and the Cypress Hills Fulton BID on March 9, 2026.",
-      "Met with the team in April 2026, through the Cypress Hills Fulton BID, about Google Business Profiles and social media for Fulton Street businesses.",
+      "Walked Cypress Hills with the team and the Cypress Hills Fulton BID, one of its programs, in March 2026.",
+      "Met with the team in April 2026 about Google Business Profiles and social media for local businesses.",
     ],
     businesses: [
       { name: "Safa Sanctuary", status: "live", url: "https://www.safasanctuary.org" },
@@ -235,17 +190,14 @@ export const partnerships: Partnership[] = [
     depth: "deep",
     roles: ["built-their-site", "introduces-merchants", "field-outreach", "owner-liaison"],
     summary:
-      "Novus designed and built the Forest Avenue BID's own website. The BID also introduces merchants on Forest Avenue, coordinated visits along the corridor, and helps the team reach owners for the photos, menus and feedback their sites need. It works alongside the Staten Island Business Outreach Center, whose website Novus also built.",
-    facts: [
-      "Novus added neighborhood and storefront photography to the BID's website in May 2026.",
-    ],
+      "Novus designed and built the Forest Avenue BID's own website. The BID also introduces merchants on Forest Avenue, coordinated visits along the corridor, and helps the team reach owners for the photos, menus and feedback their sites need.",
+    facts: ["Novus added neighborhood and storefront photos to the BID's website in May 2026."],
     businesses: [
       { name: "Forest Avenue BID website", status: "live", url: "https://forestavenuebid.com" },
       { name: "Moretti Bakery", status: "in-progress" },
       { name: "Chey Florist", status: "in-progress" },
       { name: "Taqueria El Buchon", status: "in-progress" },
     ],
-    worksAlongside: ["siboc"],
     since: "January 2026",
   },
   {
@@ -257,13 +209,12 @@ export const partnerships: Partnership[] = [
     depth: "deep",
     roles: ["built-their-site", "shares-resource"],
     summary:
-      "The Staten Island Business Outreach Center is the business-support arm of the West Brighton Community Local Development Corporation. Novus designed and built SIBOC's website, with a working inquiry form, and asked for the organization's event schedule to keep it current. SIBOC shares Novus with Staten Island merchants.",
+      "The Staten Island Business Outreach Center is the business-support arm of the West Brighton Community Local Development Corporation. Novus designed and built SIBOC's website, with a working inquiry form, and SIBOC shares Novus with Staten Island merchants.",
     facts: [
       "Shared Novus's flyer with local merchants in February 2026.",
       "Novus added staff photos to SIBOC's website in August 2026.",
     ],
     businesses: [{ name: "SIBOC website", status: "live", url: "https://siboc.org" }],
-    worksAlongside: ["forest-avenue-bid"],
   },
   {
     id: "sunnyside-shines",
@@ -275,10 +226,7 @@ export const partnerships: Partnership[] = [
     roles: ["introduces-merchants", "event"],
     summary:
       "The Sunnyside Shines BID introduces owners in Sunnyside to Novus and invited the team to meet merchants at its events, including the Sunnyside Night Market.",
-    facts: [
-      "Hosted the team at the Sunnyside Night Market and at a merchant event at a local restaurant.",
-      "Introduced owners to Novus directly by email in May and June 2026.",
-    ],
+    facts: ["Introduced owners to Novus in May and June 2026."],
     businesses: [
       { name: "Tangra Fusion", status: "live", url: "https://tangrafusion.com" },
       { name: "Eggstravaganza", status: "in-progress" },
@@ -294,11 +242,7 @@ export const partnerships: Partnership[] = [
     depth: "deep",
     roles: ["introduces-merchants", "field-outreach"],
     summary:
-      "The Park Slope Fifth Avenue BID introduced Novus to merchants on Fifth Avenue and organized a merchant walk so the team could meet owners in person. Petite Dumpling, one of the businesses the BID introduced, launched its website in August 2026.",
-    facts: [
-      "Organized a merchant walk along Fifth Avenue on January 29, 2026.",
-      "Petite Dumpling's website went live on August 14, 2026.",
-    ],
+      "The Park Slope Fifth Avenue BID introduced Novus to merchants on Fifth Avenue and organized a merchant walk in Park Slope in January 2026 so the team could meet owners in person. Petite Dumpling, one of the businesses it introduced, launched its site in August 2026.",
     businesses: [{ name: "Petite Dumpling", status: "live", url: "https://petitedumpling.com" }],
     since: "January 2026",
   },
@@ -308,11 +252,11 @@ export const partnerships: Partnership[] = [
     shortName: "Asian American Federation",
     kind: "community-org",
     sector: "citywide",
+    mapSector: "Manhattan",
     depth: "deep",
     roles: ["introduces-merchants", "owner-liaison"],
     summary:
       "The Asian American Federation introduces the owners of small businesses it works with to Novus. Its staff visit owners in person to show them their drafts, gather feedback and help with domains.",
-    facts: ["Staff visited owners in person to review drafts and collect their feedback in September 2026."],
     businesses: [{ name: "JeunJu Korean Restaurant", status: "in-progress" }],
     since: "January 2026",
   },
@@ -322,15 +266,25 @@ export const partnerships: Partnership[] = [
     shortName: "SBRN",
     kind: "network",
     sector: "citywide",
+    mapSector: "Manhattan",
     depth: "deep",
     roles: ["connected-network", "introduces-merchants"],
     summary:
-      "The NYC Small Business Resource Network connects business owners with support in all five boroughs, through specialists based at the borough chambers. After the Queens Chamber introduced us, Novus presented to SBRN specialists from every borough. Specialists now introduce owners who need a website and coordinate follow-up with the team.",
-    facts: [
-      "Novus presented to SBRN specialists from all five boroughs on June 18, 2026.",
-      "Lists Novus as a website resource in its referral system.",
-    ],
+      "The NYC Small Business Resource Network connects business owners with support in all five boroughs, through specialists based at the borough chambers. Novus presented to SBRN specialists from every borough in June 2026, and specialists now introduce owners who need a website and coordinate follow-up with the team.",
+    facts: ["Lists Novus as a website resource in its referral system."],
     introducedBy: [{ from: "queens-chamber" }],
+  },
+  {
+    id: "nyc-sbs",
+    name: "NYC Small Business Services",
+    shortName: "NYC SBS",
+    kind: "agency",
+    sector: "citywide",
+    mapSector: "Manhattan",
+    depth: "active",
+    roles: [],
+    summary:
+      "Novus met with NYC Small Business Services in June 2026 and followed up with an overview of its neighborhood partnerships.",
   },
   {
     id: "bronx-chamber",
@@ -354,8 +308,7 @@ export const partnerships: Partnership[] = [
     depth: "active",
     roles: ["connected-network", "introduces-merchants"],
     summary:
-      "The Queens Chamber of Commerce introduced Novus to the Small Business Resource Network's leadership, which led to our presentation to specialists from all five boroughs. Its business support team has also referred a Queens owner to Novus.",
-    facts: ["Met with the team in May 2026."],
+      "The Queens Chamber of Commerce met with Novus in May 2026 and introduced us to the Small Business Resource Network's leadership, which led to our presentation to specialists from all five boroughs. Its business support team has also referred a Queens owner to Novus.",
     introducedBy: [{ from: "bayside-village-bid" }],
   },
   {
@@ -391,11 +344,7 @@ export const partnerships: Partnership[] = [
     depth: "active",
     roles: ["introduces-merchants"],
     summary:
-      "The Local Development Corporation of East New York came to Novus through a client. The founder of Golden Rose Employment Agency, a business the Brooklyn Chamber referred, introduced us in August 2026. After meeting the team in September, the LDC introduced five business owners within three days.",
-    facts: [
-      "Introduced to Novus by the founder of Golden Rose Employment Agency on August 31, 2026.",
-      "Introduced five business owners to Novus between September 8 and 10, 2026.",
-    ],
+      "The Local Development Corporation of East New York came to Novus through a client. The founder of Golden Rose Employment Agency, a business the Brooklyn Chamber referred, introduced us in August 2026. After meeting the team in September 2026, the LDC introduced five business owners.",
     introducedBy: [{ from: "brooklyn-chamber", via: "Golden Rose Employment Agency" }],
     monogram: "LDCENY",
   },
@@ -408,8 +357,7 @@ export const partnerships: Partnership[] = [
     depth: "active",
     roles: ["event", "introduces-merchants"],
     summary:
-      "The East New York Merchants Association invited Novus to take part in its \"Let's Fill These Storefronts!\" event, where the team met local owners. Rell's Cafe Corner is one of the projects that grew out of that work.",
-    facts: ["Novus took part in \"Let's Fill These Storefronts!\" on May 2, 2026."],
+      "The East New York Merchants Association invited Novus to take part in its \"Let's Fill These Storefronts!\" event in May 2026, where the team met local owners. Rell's Cafe Corner is one of the projects that grew out of that work.",
     businesses: [{ name: "Rell's Cafe Corner", status: "in-progress" }],
   },
   {
@@ -421,8 +369,7 @@ export const partnerships: Partnership[] = [
     depth: "active",
     roles: ["introduces-merchants", "field-outreach"],
     summary:
-      "The North Flatbush BID met with Novus in March 2026, and the team then visited the district. The BID introduced merchants in the district to Novus.",
-    facts: ["The team visited the district in late March 2026."],
+      "The North Flatbush BID met with Novus in March 2026, and the team visited the district later that month. The BID introduced merchants in the district to Novus.",
     businesses: [
       { name: "Pho Bar", status: "in-progress" },
       { name: "Eulalee Beckford Designs", status: "in-progress" },
@@ -439,8 +386,7 @@ export const partnerships: Partnership[] = [
     depth: "active",
     roles: ["introduces-merchants", "field-outreach"],
     summary:
-      "The Bay Ridge 5th Avenue BID shared its list of Fifth Avenue merchants and recommended owners for Novus to contact. The team followed with personalized outreach to each business the BID recommended.",
-    facts: ["Shared its merchant list on September 3, 2026. Novus began personalized outreach the next day."],
+      "The Bay Ridge 5th Avenue BID shared its list of Fifth Avenue merchants in September 2026 and recommended owners for Novus to contact. The team followed with personalized outreach to each business the BID recommended.",
   },
   {
     id: "camo",
@@ -451,8 +397,7 @@ export const partnerships: Partnership[] = [
     depth: "active",
     roles: ["introduces-merchants"],
     summary:
-      "The Castleton Avenue Merchants Organization represents merchants on Castleton Avenue in Staten Island. The Forest Avenue BID introduced us in May 2026, and Clay & Kiln Studio, which came to Novus through CAMO, launched its website in July 2026.",
-    facts: ["Clay & Kiln Studio's website went live on July 21, 2026."],
+      "The Castleton Avenue Merchants Organization represents merchants on Castleton Avenue in Staten Island. Clay & Kiln Studio, which came to Novus through CAMO, launched its site in July 2026.",
     businesses: [{ name: "Clay & Kiln Studio", status: "live", url: "https://clayandkilnstudio.com" }],
     introducedBy: [{ from: "forest-avenue-bid" }],
   },
@@ -477,8 +422,7 @@ export const partnerships: Partnership[] = [
     depth: "active",
     roles: ["shares-resource"],
     summary:
-      "The Long Island City Partnership shares Novus with local businesses that need help with their websites.",
-    facts: ["Met with the team in July 2026."],
+      "The Long Island City Partnership met with Novus in July 2026 and shares Novus with local businesses that need help with their websites.",
   },
   {
     // Pending founder open question 4: the redesign was for a staff member's
