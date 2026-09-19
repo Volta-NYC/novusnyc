@@ -68,13 +68,12 @@ export const communityPartners = [
   { name: "Lower East Side Partnership", logo: "/partners/logos/lower-east-side-partnership.png", website: "https://les.nyc/", important: false },
   { name: "North Flatbush BID", logo: "/partners/logos/north-flatbush-bid.png", website: "https://www.northflatbushbid.nyc/", important: false },
   { name: "Third Avenue BID", logo: "/partners/logos/third-avenue-bid.png", website: "https://www.thirdavenuebid.org/", important: false },
-  { name: "West Brighton Community Local Development Corporation", logo: "/partners/logos/west-brighton-cldc.png", website: "https://siboc.org/", important: false },
   { name: "Atlantic Avenue Local Development Corporation", logo: "/partners/logos/atlantic-avenue-ldc.png", website: "https://www.atlanticave.org/", important: false },
   { name: "Long Island City Partnership", logo: "/partners/logos/long-island-city-partnership.png", website: "https://www.longislandcityqueens.com/", important: false },
   { name: "Asian American Federation", logo: "/partners/logos/asian-american-federation.png", website: "https://www.aafederation.org/", important: false },
   { name: "Castleton Avenue Merchants Organization", logo: "/partners/logos/castleton-avenue-merchants.png", website: "https://castleton-avenue-merchant-org.vercel.app/", important: false },
   { name: "Queens Economic Development Corporation", logo: "/partners/logos/queens-economic-development.png", website: "https://www.queensny.org/", important: false },
-  { name: "Staten Island Board of Commerce", logo: "/partners/logos/siboc.png", website: "https://siboc.org/", important: false },
+  { name: "Staten Island Business Outreach Center", logo: "/partners/logos/siboc.png", website: "https://siboc.org/", important: false },
   { name: "East New York Merchants Association", logo: "/partners/logos/east-new-york-merchants.png", website: "https://innresebv.org/home-program-services", important: false },
 ];
 
@@ -91,7 +90,7 @@ function normalizeCommunityPartnerName(value: string): string {
 
 const COMMUNITY_PARTNER_ALIASES: Record<string, string> = {
   "nyc small business resource network": "NYC Small Business Resource Network",
-  "siboc": "Staten Island Board of Commerce",
+  "siboc": "Staten Island Business Outreach Center",
 };
 
 /** Resolve a portal record to the same website/logo used on the homepage. */
