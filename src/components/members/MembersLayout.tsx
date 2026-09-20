@@ -32,11 +32,6 @@ type NavItem = {
 
 const OWNER_NAV_ITEMS: NavItem[] = [
   {
-    href: "/members/overview",
-    label: "Dashboard",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  },
-  {
     href: "/members/projects",
     label: "Tech Projects",
     activeMatchRoots: ["/members/projects"],
@@ -77,14 +72,13 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/pods", "/members/team", "/members/email"]);
+const ADMIN_NAV_HREFS = new Set(["/members/projects", "/members/pods", "/members/team", "/members/email"]);
 const ADMIN_NAV_ITEMS: NavItem[] = OWNER_NAV_ITEMS.filter((item) => ADMIN_NAV_HREFS.has(item.href));
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/me",
     label: "Overview",
-    activeMatchRoots: ["/members/me", "/members/overview"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   },
   {
@@ -108,6 +102,18 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
+// Collapsed, the switcher has room for three letters. Cities people say out
+// loud as an abbreviation keep theirs; anything else takes its first three.
+const CHAPTER_ABBREVIATIONS: Record<string, string> = {
+  "new york": "NYC",
+  chicago: "CHI",
+};
+
+function chapterAbbreviation(chapter: { name: string; city?: string }): string {
+  const key = (chapter.city || chapter.name).trim().toLowerCase();
+  return CHAPTER_ABBREVIATIONS[key] ?? (chapter.city || chapter.name).slice(0, 3).toUpperCase();
+}
+
 function getInitials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -117,7 +123,7 @@ function getInitials(displayName: string): string {
 
 function getDefaultMembersPath(_role: AuthRole | null): string {
   if (_role === "member") return "/members/me";
-  return "/members/overview";
+  return "/members/projects";
 }
 
 const TECH_PROJECTS_ITEM = OWNER_NAV_ITEMS.find((i) => i.href === "/members/projects")!;
@@ -128,8 +134,8 @@ function getNavItemsForRole(role: AuthRole | null, isTechLead: boolean): NavItem
   if (role === "owner") return OWNER_NAV_ITEMS;
   if (role === "admin") return ADMIN_NAV_ITEMS;
   if (isTechLead) {
-    const [overview, ...rest] = MEMBER_NAV_ITEMS;
-    return [overview, TECH_PROJECTS_ITEM, ...rest];
+    const [ownPage, ...rest] = MEMBER_NAV_ITEMS;
+    return [ownPage, TECH_PROJECTS_ITEM, ...rest];
   }
   return MEMBER_NAV_ITEMS;
 }
@@ -138,7 +144,6 @@ function getAllowedRootsForRole(role: AuthRole | null, isTechLead: boolean): str
   if (role === "owner") {
     return [
       "/members/projects",
-      "/members/overview",
       "/members/pods",
       "/members/orgs",
       "/members/team",
@@ -149,7 +154,6 @@ function getAllowedRootsForRole(role: AuthRole | null, isTechLead: boolean): str
   }
   if (role === "admin") {
     return [
-      "/members/overview",
       "/members/projects",
       "/members/pods",
       "/members/team",
@@ -543,7 +547,7 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
                       isCurrent ? tone.navActive : tone.navInactive
                     }`}
                   >
-                    {sidebarCollapsed ? chapter.name.slice(0, 2).toUpperCase() : chapter.name}
+                    {sidebarCollapsed ? chapterAbbreviation(chapter) : chapter.name}
                   </Link>
                 );
               })}

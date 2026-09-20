@@ -131,6 +131,9 @@ const nextConfig = {
         destination: "/partners",
         permanent: true,
       },
+      // The dashboard only restated the other pages; Tech Projects is the
+      // landing page now.
+      { source: "/members/overview", destination: "/members/projects", permanent: false },
       // The email section is one page now; Compose is gone.
       { source: "/members/email/templates",   destination: "/members/email", permanent: false },
       { source: "/members/email/automations", destination: "/members/email", permanent: false },

@@ -108,7 +108,6 @@ const QUICK_ACTIONS = [
   { label: "Check pod operations", detail: "Meetings, attendance, tasks, and grants", href: "/members/pods" },
   { label: "Edit public cards", detail: "Website details, images, and card order", href: "/members/projects?view=public" },
   { label: "Manage email", detail: "Wording and on/off for every automatic email", href: "/members/email" },
-  { label: "Open operations dashboard", detail: "Projects, pods, members, and hours", href: "/members/overview" },
 ] as const;
 
 function OverviewTab() {
