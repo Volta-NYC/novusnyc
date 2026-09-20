@@ -5,6 +5,9 @@ import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress
 import { buildConfirmedAccountAcceptanceTemplate } from "@/lib/server/applicantEmails";
 import { renderAutomationEmail } from "@/lib/server/templateRenderer";
 import { loadEmailTemplate } from "@/lib/server/emailTemplates";
+import { renderAcceptanceEmail } from "@/lib/server/acceptanceEmail";
+import { acceptanceCcAddress, findAcceptancePlacement } from "@/lib/members/acceptancePlacements";
+import { EMAIL } from "@/lib/mail";
 
 export const runtime = "nodejs";
 
@@ -12,6 +15,7 @@ type DecisionEmailBody = {
   applicantName?: string;
   applicantEmail?: string;
   decision?: string;
+  placementId?: string;
 };
 
 function normalizeEmail(email: string): string {
@@ -49,6 +53,7 @@ export async function POST(req: NextRequest) {
   const applicantName  = (body.applicantName  ?? "").trim();
   const applicantEmail = normalizeEmail(body.applicantEmail ?? "");
   const decision = body.decision;
+  const placement = findAcceptancePlacement((body.placementId ?? "").trim());
 
   if (!applicantName || !applicantEmail || !decision) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
@@ -82,7 +87,43 @@ export async function POST(req: NextRequest) {
     confirmedAccountExists = !!(match?.email_confirmed_at);
   } catch { /* treat as new user */ }
 
-  if (confirmedAccountExists) {
+  // A placement picks the department-specific welcome. Someone with an account
+  // already gets the same copy pointed at the portal instead of at signup.
+  if (placement) {
+    const { data: settings } = await sb
+      .from("site_settings")
+      .select("acceptance_whatsapp_link, acceptance_cc_email")
+      .eq("id", "singleton")
+      .maybeSingle();
+
+    const whatsappLink = String(settings?.acceptance_whatsapp_link ?? "").trim();
+    if (placement.needsWhatsapp && !whatsappLink) {
+      return NextResponse.json({ error: "whatsapp_link_missing" }, { status: 400 });
+    }
+
+    const rendered = await renderAcceptanceEmail(placement.templateKey, {
+      firstName,
+      applicantName,
+      portalLink: confirmedAccountExists ? `${baseUrl}/members` : signupUrl,
+      whatsappLink,
+    });
+    if (!rendered) return NextResponse.json({ error: "template_missing" }, { status: 500 });
+
+    const cc = acceptanceCcAddress(placement, String(settings?.acceptance_cc_email ?? ""));
+
+    await transporter.sendMail({
+      from: resolveFromWithName(from),
+      replyTo: getDefaultReplyToAddress(from),
+      to: applicantEmail,
+      // The CC is named in the copy, so it stays visible. The shared inbox is
+      // blind-copied purely so the team keeps a record of what went out.
+      cc: cc || undefined,
+      bcc: EMAIL.info,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+    });
+  } else if (confirmedAccountExists) {
     // Already has a portal account — notify of acceptance, link directly to portal.
     const rendered = await renderAutomationEmail("applicant_accepted", { applicantName, firstName, link: `${baseUrl}/members` });
     const fallback = buildConfirmedAccountAcceptanceTemplate({ name: applicantName });
@@ -137,7 +178,7 @@ export async function POST(req: NextRequest) {
     actorUid: verified.caller.uid,
     actorEmail: verified.caller.email,
     actorName: verified.caller.name,
-    details: { decision, applicantEmail },
+    details: { decision, applicantEmail, placement: placement?.id ?? null },
   });
 
   return NextResponse.json({ success: true });

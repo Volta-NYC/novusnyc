@@ -5,13 +5,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
-  Btn, BulkActionBar, Empty, Modal, Field, PageHeader, SearchBar, Select, SkeletonRows, useBulkSelect, useConfirm,
+  Btn, BulkActionBar, Empty, Modal, Field, Input, PageHeader, SearchBar, Select, SkeletonRows, useBulkSelect, useConfirm,
   ViewPanel, ViewSection,
 } from "@/components/members/ui";
 import {
+  subscribeSiteSettings,
+  updateSiteSettings,
   type ApplicationRecord,
   type ApplicationStatus,
 } from "@/lib/members/storage";
+import { ACCEPTANCE_PLACEMENTS } from "@/lib/members/acceptancePlacements";
 import { useAuth } from "@/lib/members/authContext";
 import { gradeToClassOf } from "@/lib/grades";
 import { DEFAULT_MEMBER_ROLE } from "@/lib/members/roles";
@@ -125,6 +128,13 @@ export default function ApplicantsPage() {
   const [acceptModalApp, setAcceptModalApp] = useState<ApplicationRecord | null>(null);
   const [acceptRole, setAcceptRole] = useState("Analyst");
   const [acceptSendEmail, setAcceptSendEmail] = useState(true);
+  const [acceptPlacement, setAcceptPlacement] = useState("");
+  // Acceptance email settings live here rather than in the admin screen: they
+  // are edited by whoever is sending acceptances, on the screen they send from.
+  const [waLink, setWaLink] = useState("");
+  const [ccEmail, setCcEmail] = useState("");
+  const [savingAcceptSettings, setSavingAcceptSettings] = useState(false);
+  const [acceptSettingsMsg, setAcceptSettingsMsg] = useState("");
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
   const canEdit = authRole === "owner";
@@ -161,6 +171,24 @@ export default function ApplicantsPage() {
     const timer = setInterval(() => void fetchApplicantsData(), 15000);
     return () => clearInterval(timer);
   }, [fetchApplicantsData, canView]);
+
+  useEffect(() => subscribeSiteSettings((s) => {
+    setWaLink(s.acceptanceWhatsappLink);
+    setCcEmail(s.acceptanceCcEmail);
+  }), []);
+
+  const saveAcceptSettings = async () => {
+    setSavingAcceptSettings(true);
+    setAcceptSettingsMsg("");
+    try {
+      await updateSiteSettings({ acceptanceWhatsappLink: waLink.trim(), acceptanceCcEmail: ccEmail.trim() });
+      setAcceptSettingsMsg("Saved.");
+    } catch (err) {
+      setAcceptSettingsMsg(err instanceof Error ? err.message : "Could not save.");
+    } finally {
+      setSavingAcceptSettings(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = normalize(search);
@@ -210,7 +238,7 @@ export default function ApplicantsPage() {
     }
   };
 
-  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, role: string) => {
+  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, role: string, placementId = "") => {
     if (!user) throw new Error("not_authenticated");
     const token = await getAuthToken();
     // The Accepted stamp is applied by the promote endpoint once the member row
@@ -251,11 +279,15 @@ export default function ApplicantsPage() {
           applicantName: app.fullName,
           applicantEmail: app.email,
           decision: "Accepted",
+          placementId,
         }),
       });
       if (!emailRes.ok) {
+        const { error } = await emailRes.json().catch(() => ({})) as { error?: string };
         // The member exists either way; say so rather than implying a rollback.
-        throw new Error(`${app.fullName} was added, but the acceptance email didn't send.`);
+        throw new Error(error === "whatsapp_link_missing"
+          ? `${app.fullName} was added, but no acceptance email went out: set the WhatsApp group link first.`
+          : `${app.fullName} was added, but the acceptance email didn't send.`);
       }
     }
     return promoted.action ?? "updated";
@@ -265,12 +297,13 @@ export default function ApplicantsPage() {
     if (!acceptModalApp) return;
     setBulkPromoting(true);
     try {
-      const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptRole);
+      const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptRole, acceptPlacement);
       setStatusMessage(action === "created"
         ? `Accepted ${acceptModalApp.fullName} and added them to the member directory.`
         : `Accepted ${acceptModalApp.fullName}. They were already in the directory, so their record was updated.`);
       await fetchApplicantsData();
       setAcceptModalApp(null);
+      setAcceptPlacement("");
     } catch (err) {
       setStatusMessage(err instanceof Error ? err.message : `Could not accept ${acceptModalApp.fullName}.`);
     } finally {
@@ -392,6 +425,7 @@ export default function ApplicantsPage() {
         onClose={() => {
           if (bulkPromoting) return;
           setAcceptModalApp(null);
+          setAcceptPlacement("");
         }}
         title="Accept Applicant"
       >
@@ -409,6 +443,22 @@ export default function ApplicantsPage() {
               ))}
             </Select>
           </Field>
+          <Field label="Placement">
+            <Select
+              value={acceptPlacement}
+              onChange={(e) => setAcceptPlacement(e.target.value)}
+            >
+              <option value="">General acceptance (no team)</option>
+              {ACCEPTANCE_PLACEMENTS.map((p) => (
+                <option key={p.id} value={p.id}>{p.department} — {p.label}</option>
+              ))}
+            </Select>
+          </Field>
+          <p className="text-[11px] text-white/45">
+            {acceptPlacement
+              ? "Sends that team's welcome email. Marketing placements CC the coordinator; Digital & Tech CCs Tahmid."
+              : "Sends the general acceptance email with a portal setup link."}
+          </p>
           <label className="inline-flex items-center gap-2 text-sm text-white/65">
             <input
               type="checkbox"
@@ -438,6 +488,38 @@ export default function ApplicantsPage() {
           <span className="text-white/35">{alreadyMemberCount} reapplied after joining</span>
         )}
       </div>
+
+      {canEdit && (
+        <div className="mb-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+          <div className="mb-2 flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-wide text-white/50">Acceptance email settings</span>
+            {acceptSettingsMsg && <span className="text-[10px] text-white/45">{acceptSettingsMsg}</span>}
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[240px] flex-1">
+              <Field label="WhatsApp group link">
+                <Input
+                  value={waLink}
+                  onChange={(e) => setWaLink(e.target.value)}
+                  placeholder="https://chat.whatsapp.com/..."
+                />
+              </Field>
+            </div>
+            <div className="min-w-[240px] flex-1">
+              <Field label="CC on Marketing acceptances">
+                <Input
+                  value={ccEmail}
+                  onChange={(e) => setCcEmail(e.target.value)}
+                  placeholder="Ellie Mak <ellie@example.com>"
+                />
+              </Field>
+            </div>
+            <Btn variant="secondary" onClick={() => void saveAcceptSettings()} disabled={savingAcceptSettings}>
+              {savingAcceptSettings ? "Saving..." : "Save"}
+            </Btn>
+          </div>
+        </div>
+      )}
       <SectionTabs tabs={APPLICANTS_GROUP_TABS} />
 
       {statusMessage && <p className="text-xs text-white/55 mb-4">{statusMessage}</p>}
