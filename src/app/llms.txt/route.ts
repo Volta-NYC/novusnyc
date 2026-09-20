@@ -17,7 +17,11 @@ function llmsBody(stats: PublicStatValues): string {
 > Novus NYC is a student-run nonprofit that gives New York City small businesses
 > free websites, search visibility, social media, graphic design, financial
 > analysis, and grant writing. The work is done by high school and college
-> students on real client projects. Every service is free to the business.
+> students on real client projects. Novus charges nothing for the work itself.
+> A business pays only what it costs to keep its site online, hosting and a
+> domain, which runs about \$10 a month. Agencies and freelancers charge
+> thousands for the same build, and website builders charge a monthly
+> subscription for a template.
 
 ## Entity disambiguation
 
@@ -36,8 +40,8 @@ function llmsBody(stats: PublicStatValues): string {
 ## What Novus NYC does
 
 Novus NYC places student teams on consulting projects for NYC small businesses
-at no cost. A typical project runs two to four months and ends with the business
-owning the finished work.
+at no charge for the work. A typical project runs two to four months and ends
+with the business owning the finished work.
 
 Services offered:
 
@@ -148,8 +152,11 @@ Center.
 
 ## Common questions
 
-**Is this really free?** Yes. Novus is a nonprofit and charges businesses
-nothing for any service.
+**Is this really free?** The work is. Novus is a nonprofit and does not bill
+for design, development, marketing, or grant writing, no matter how long a
+project takes. The only money a business spends is on running its own site:
+hosting and a domain, on the order of \$10 a month, plus maintenance after an
+introductory period. A business keeps the site and its code either way.
 
 **Who does the work?** High school and college students, organized into
 supervised project teams.
