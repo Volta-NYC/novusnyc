@@ -18,17 +18,11 @@ function siteOrigin(req: NextRequest): string {
 }
 
 const DEFAULT_SETUP_SUBJECT = "Your Novus NYC portal setup link";
-const DEFAULT_SETUP_HTML = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a1a">
-  <img src="https://www.novusnyc.org/logo.png" alt="Novus NYC logo" width="36" style="margin-bottom:24px">
-  <h2 style="margin:0 0 8px;font-size:20px">Your portal setup link</h2>
-  <p style="margin:0 0 24px;color:#555;font-size:15px">Hi {{firstName}}, click below to set up your Novus NYC member portal account.</p>
-  <a href="{{link}}" style="display:inline-block;background:#F6B78D;color:#0d0d0d;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:15px">Set Up Account</a>
-  <p style="margin:24px 0 0;font-size:13px;color:#888">This link expires in 24 hours and can only be used once. If it expires, <a href="{{signupUrl}}" style="color:#F6B78D;">click here</a> to request a new one.<br>If you didn't request this, you can safely ignore it.</p>
-</body>
-</html>`;
+const DEFAULT_SETUP_HTML = `    <h2>Your portal setup link</h2>
+<p>Hi {{firstName}}, click below to set up your Novus NYC member portal account.</p>
+<a href="{{link}}">Set Up Account</a>
+<p>This link expires in 24 hours and can only be used once. If it expires, <a href="{{signupUrl}}">click here</a> to request a new one.<br>If you didn't request this, you can safely ignore it.</p>
+`;
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);

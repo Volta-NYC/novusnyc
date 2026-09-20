@@ -458,11 +458,6 @@ export default function ApplicantsPage() {
               ))}
             </Select>
           </Field>
-          <p className="text-[11px] text-white/45">
-            {acceptPlacement
-              ? "Sends that team's welcome email. Marketing placements CC the coordinator; Digital & Tech CCs Tahmid."
-              : "Sends the general acceptance email with a portal setup link."}
-          </p>
           <label className="inline-flex items-center gap-2 text-sm text-white/65">
             <input
               type="checkbox"

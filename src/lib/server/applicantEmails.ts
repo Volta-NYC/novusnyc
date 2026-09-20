@@ -1,5 +1,5 @@
 function wrapper(content: string): string {
-  return `<div style="font-family: Garamond, 'EB Garamond', serif; font-size: 15px; line-height: 1.7; color: #111111; color-scheme: light;">${content}</div>`;
+  return `${content}`;
 }
 
 // Used when the accepted applicant already has a confirmed portal account —
@@ -9,7 +9,7 @@ function confirmedAccountAcceptanceEmail(name: string): string {
   return wrapper(
     `<p>Hi ${firstName},</p>` +
       `<p>Congratulations! You've been accepted to Novus NYC.</p>` +
-      `<p>You'll be assigned to a project within the next week. Your team, tasks, and project details are organized in the member portal — sign in at <a href="https://www.novusnyc.org/members" style="color:#F6B78D;">novusnyc.org/members</a>.</p>` +
+      `<p>You'll be assigned to a project within the next week. Your team, tasks, and project details are organized in the member portal — sign in at <a href="https://www.novusnyc.org/members">novusnyc.org/members</a>.</p>` +
       `<p>Best,<br>Ethan Zhang<br>Novus NYC</p>`
   );
 }

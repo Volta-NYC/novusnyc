@@ -18,6 +18,13 @@ export interface RenderedAcceptanceEmail {
  */
 function htmlToText(html: string): string {
   return html
+    // Anchor text carries the meaning, the href carries the destination. Strip
+    // the tag naively and the plain-text part keeps "your member portal" and
+    // loses the URL entirely, leaving the reader nothing to click.
+    .replace(/<a\b[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, (_m, href, label) => {
+      const text = String(label).replace(/<[^>]+>/g, "").trim();
+      return text && text !== href ? `${text} (${href})` : href;
+    })
     .replace(/<\s*br\s*\/?\s*>/gi, "\n")
     .replace(/<\s*\/p\s*>/gi, "\n\n")
     .replace(/<[^>]+>/g, "")

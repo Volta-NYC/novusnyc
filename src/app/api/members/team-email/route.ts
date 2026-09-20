@@ -30,15 +30,12 @@ function stripHtml(input: string): string {
     .trim();
 }
 
+// No wrapper. A composed message goes out as the bare fragment the editor
+// produced, so it inherits the reader's own client typography like any mail a
+// person types. Forcing Arial and a fixed line-height made team mail read as a
+// template rather than a note.
 function normalizeHtmlBody(input: string): string {
-  const trimmed = input.trim();
-  if (/<!doctype html/i.test(trimmed) || /<html[\s>]/i.test(trimmed)) return trimmed;
-  return [
-    "<!doctype html>",
-    '<html><body style="margin:0;padding:0;background:#ffffff;color:#202124;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;">',
-    trimmed,
-    "</body></html>",
-  ].join("");
+  return input.trim();
 }
 
 function applyPlaceholders(input: string, meta: Record<string, string>): string {
