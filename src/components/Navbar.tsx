@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // audience pages follow About.
 const links = [
   { href: "/showcase", label: "Our Work" },
-  { href: "/partnerships", label: "Partnerships" },
+  { href: "/partners", label: "Partners" },
   { href: "/about", label: "About" },
   { href: "/businesses", label: "For Businesses" },
   { href: "/join", label: "For Students" },

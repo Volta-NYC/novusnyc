@@ -125,6 +125,12 @@ const nextConfig = {
       // redirect(), which emits 307 Temporary — that tells Google to keep the
       // old URL indexed and withholds the consolidation. Handled here instead so
       // they are 308 Permanent, matching the domain-level redirects.
+      // /partnerships was live only briefly before the page moved to /partners.
+      {
+        source: "/partnerships",
+        destination: "/partners",
+        permanent: true,
+      },
       {
         source: "/contact",
         destination: "/businesses",

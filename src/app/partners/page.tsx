@@ -11,10 +11,10 @@ const DESCRIPTION =
 // Open Graph and Twitter are set here so the page does not inherit the root
 // layout's pricing language while the founder settles it.
 export const metadata: Metadata = {
-  title: "Partnerships",
+  title: "Partners",
   description: DESCRIPTION,
-  openGraph: { title: "Partnerships | Novus NYC", description: DESCRIPTION, images: ["/api/og"] },
-  twitter: { card: "summary_large_image", title: "Partnerships | Novus NYC", description: DESCRIPTION, images: ["/api/og"] },
+  openGraph: { title: "Partners | Novus NYC", description: DESCRIPTION, images: ["/api/og"] },
+  twitter: { card: "summary_large_image", title: "Partners | Novus NYC", description: DESCRIPTION, images: ["/api/og"] },
 };
 
 const DIVISION_OF_WORK = [
@@ -40,7 +40,7 @@ const DIVISION_OF_WORK = [
 
 const MAP_NOTE_ID = "partnership-map-note";
 
-export default async function PartnershipsPage() {
+export default async function PartnersPage() {
   const partners = await getPublicPartnerships();
 
   return (
@@ -48,7 +48,7 @@ export default async function PartnershipsPage() {
       <section className="relative overflow-hidden bg-n-dark pb-6 pt-32" data-home-dark-end="true">
         <div className="mx-auto max-w-7xl px-4 sm:px-5 md:px-8">
           <AnimatedSection>
-            <p className="mb-4 font-body text-sm font-semibold uppercase tracking-widest text-n-orange">Partnerships</p>
+            <p className="mb-4 font-body text-sm font-semibold uppercase tracking-widest text-n-orange">Partners</p>
             <h1 className="max-w-4xl font-display font-bold leading-[1.02] tracking-tight text-white" style={{ fontSize: "clamp(2.3rem, 5.4vw, 4.2rem)" }}>
               The organizations that introduce us to New York&apos;s small businesses.
             </h1>

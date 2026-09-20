@@ -69,7 +69,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${base}/partnerships`,
+      url: `${base}/partners`,
       lastModified: new Date("2026-09-19"),
       changeFrequency: "monthly",
       priority: 0.8,

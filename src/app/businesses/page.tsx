@@ -333,7 +333,7 @@ export default async function Partners() {
               ))}
             </div>
             <Link
-              href="/partnerships"
+              href="/partners"
               className="mt-6 inline-flex items-center font-display text-sm font-bold text-n-orange-ink underline-offset-4 hover:underline"
             >
               See every organization we work with, and what each one does

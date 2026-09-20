@@ -7,7 +7,7 @@ import { SOCIAL } from "@/lib/social";
 
 const footerLinks = [
   { href: "/showcase", label: "Our Work" },
-  { href: "/partnerships", label: "Partnerships" },
+  { href: "/partners", label: "Partners" },
   { href: "/about", label: "About" },
   { href: "/businesses", label: "For Businesses" },
   { href: "/join", label: "For Students" },

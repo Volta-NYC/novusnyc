@@ -54,6 +54,6 @@ export async function POST(req: NextRequest) {
 
   revalidatePath("/");
   revalidatePath("/businesses");
-  revalidatePath("/partnerships");
+  revalidatePath("/partners");
   return NextResponse.json({ success: true, path, logoUrl });
 }

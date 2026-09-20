@@ -137,7 +137,7 @@ export default async function Showcase() {
       lng: entry.lng,
       status: normalizeProjectDisplayStatus(entry.status),
       url: entry.source === "bid" && partnershipIdByName.has(entry.name)
-        ? `/partnerships#${partnershipIdByName.get(entry.name)}`
+        ? `/partners#${partnershipIdByName.get(entry.name)}`
         : entry.url,
       colorClass,
       source: entry.source,

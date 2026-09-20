@@ -287,7 +287,7 @@ async function LiveHomeStats() {
   const liveHomeStats = [
     { value: effectiveValues.homeStudentMembers, label: "Student Members" },
     { value: effectiveValues.homeBusinessesSupported, label: "Businesses Supported", href: "/showcase" },
-    { value: effectiveValues.communityOrganizations, label: "Community Partners", href: "/partnerships" },
+    { value: effectiveValues.communityOrganizations, label: "Community Partners", href: "/partners" },
     { value: effectiveValues.homeSchoolsRepresented, label: "Schools Represented" },
   ];
 
@@ -469,7 +469,7 @@ async function CommunityPartnersSection() {
               Chambers, BIDs, local development corporations, and merchant groups connect Novus teams directly with the businesses that need support.
             </p>
             <Link
-              href="/partnerships"
+              href="/partners"
               className="mt-3 inline-flex items-center font-display text-sm font-bold text-n-orange-ink underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange/50"
             >
               See what each partnership involves

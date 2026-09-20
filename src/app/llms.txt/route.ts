@@ -110,8 +110,8 @@ Novus works alongside neighborhood and citywide organizations, including NYC
 Small Business Services, the NYC Small Business Resource Network, and the
 Manhattan, Brooklyn, Bronx, Queens, and Staten Island Chambers of Commerce.
 Business improvement districts, development corporations and merchant
-associations introduce Novus to owners in their areas. The partnerships page
-lists each organization and what it did: ${SITE_URL}/partnerships
+associations introduce Novus to owners in their areas. The partners page
+lists each organization and what it did: ${SITE_URL}/partners
 
 ## Neighborhoods served
 
@@ -176,7 +176,7 @@ schools in a number of states.
 - [For Students](${SITE_URL}/join): tracks, leadership ladder, FAQ.
 - [Apply](${SITE_URL}/apply): student application.
 - [Our Work](${SITE_URL}/showcase): client projects with live links and a map.
-- [Partnerships](${SITE_URL}/partnerships): the organizations that introduce Novus
+- [Partners](${SITE_URL}/partners): the organizations that introduce Novus
   to small businesses, and what each relationship involves.
 - [About](${SITE_URL}/about): mission, impact, leadership, history, values.
 - [Privacy](${SITE_URL}/privacy): privacy policy.

@@ -109,7 +109,7 @@ export default async function About() {
                 { value: effectiveValues.aboutBusinesses, label: "Total\nbusinesses", color: "text-n-orange-ink" },
                 { value: effectiveValues.aboutWebsiteProjects, label: "Website\nprojects", color: "text-n-purple-ink" },
                 { value: effectiveValues.aboutMarketingProjects, label: "Marketing\nprojects", color: "text-amber-700" },
-                { value: effectiveValues.communityOrganizations, label: "Community\norganizations", color: "text-amber-700", href: "/partnerships" },
+                { value: effectiveValues.communityOrganizations, label: "Community\norganizations", color: "text-amber-700", href: "/partners" },
               ].map((s, i) => {
                 const inner = <><p className={`mb-2 font-display text-3xl font-bold leading-none sm:text-4xl md:mb-3 md:text-5xl ${s.color}`}>{s.value}</p><p className="whitespace-pre-line font-body text-[10px] uppercase leading-relaxed tracking-[0.12em] text-n-muted">{s.label}{s.href && <span aria-hidden="true"> →</span>}</p></>;
                 return (

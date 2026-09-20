@@ -367,7 +367,7 @@ export default function ShowcaseClient({
                   <p className="font-body text-xs text-white/60 uppercase tracking-widest mt-1">Businesses</p>
                 </div>
                 <Link
-                  href="/partnerships"
+                  href="/partners"
                   className="group rounded-md text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-n-orange"
                 >
                   <p className="font-display font-bold text-n-orange text-3xl leading-none">{orgPartners}</p>
@@ -519,7 +519,7 @@ export default function ShowcaseClient({
             </Link>
             <p className="mt-6 font-body text-sm text-white/65">
               Run a chamber, BID or community organization?{" "}
-              <Link href="/partnerships#what-partnering-means" className="font-semibold text-n-orange underline-offset-4 hover:underline">
+              <Link href="/partners#what-partnering-means" className="font-semibold text-n-orange underline-offset-4 hover:underline">
                 See how partnering with Novus works
               </Link>
             </p>
