@@ -17,7 +17,7 @@ export const GA_MEASUREMENT_ID = "G-ZZ3J71MZY4";
  * look identical without these.
  */
 export const GA_EVENTS = {
-  /** A business or partner org submitted the contact form on /partners. */
+  /** A business or partner org submitted the contact form on /businesses. */
   contactSubmitted: "contact_form_submitted",
   /** A student submitted the membership application on /apply. */
   applicationSubmitted: "application_submitted",

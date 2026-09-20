@@ -20,7 +20,7 @@ export default function NotFound() {
             Go home
           </Link>
           <Link
-            href="/partners"
+            href="/businesses"
             className="border border-n-border text-n-ink font-display font-bold text-sm px-6 py-3 rounded-full hover:border-n-ink/40 transition-colors"
           >
             For Businesses

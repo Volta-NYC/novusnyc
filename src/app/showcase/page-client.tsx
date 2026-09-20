@@ -399,7 +399,7 @@ export default function ShowcaseClient({
             <div className="border border-n-border rounded-xl bg-n-bg px-6 py-10 text-center">
               <p className="font-display text-xl font-bold text-n-ink">Project stories are being prepared.</p>
               <p className="mx-auto mt-2 max-w-md font-body text-sm leading-relaxed text-n-muted">Novus teams are actively building with businesses across the city. Check back soon for the next published project stories.</p>
-              <Link href="/partners#contact" className="mt-5 inline-flex font-body text-sm font-semibold text-n-purple hover:underline">Get free business support →</Link>
+              <Link href="/businesses#contact" className="mt-5 inline-flex font-body text-sm font-semibold text-n-purple hover:underline">Get free business support →</Link>
             </div>
           ) : (
             <>
@@ -512,7 +512,7 @@ export default function ShowcaseClient({
               We&apos;re taking on new projects across New York City. Tell us about your business and the support you need, and we&apos;ll follow up within a few business days.
             </p>
             <Link
-              href="/partners#contact"
+              href="/businesses#contact"
               className="inline-flex items-center justify-center rounded-full bg-n-orange px-8 py-3.5 font-display text-base font-bold text-n-ink transition-colors hover:bg-n-orange-dark"
             >
               Work with us

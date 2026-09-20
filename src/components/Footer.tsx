@@ -9,7 +9,7 @@ const footerLinks = [
   { href: "/showcase", label: "Our Work" },
   { href: "/partnerships", label: "Partnerships" },
   { href: "/about", label: "About" },
-  { href: "/partners", label: "For Businesses" },
+  { href: "/businesses", label: "For Businesses" },
   { href: "/join", label: "For Students" },
   { href: "/members/login", label: "Member Login" },
   { href: "/apply", label: "Apply Now" },
@@ -20,7 +20,7 @@ export default function Footer() {
     <footer className="site-footer relative overflow-hidden bg-n-dark py-14 text-white/70 md:py-16">
       {/*
         The top-left glow used to center at 8% 0% — exactly on the seam where a
-        preceding bg-n-dark section (showcase/partners CTAs) meets the
+        preceding bg-n-dark section (showcase/businesses CTAs) meets the
         footer. That put the gradient's steepest falloff right on the boundary
         line, which read as a visible seam between two "identical" dark
         surfaces. Moving the center down and widening the falloff keeps the
@@ -46,7 +46,7 @@ export default function Footer() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3 lg:justify-end">
               <Link
-                href="/partners"
+                href="/businesses"
                 className="inline-flex items-center gap-2 rounded-full bg-n-orange px-4 py-2.5 font-body text-sm font-semibold text-n-ink transition-transform hover:-translate-y-0.5"
               >
                 Get business support

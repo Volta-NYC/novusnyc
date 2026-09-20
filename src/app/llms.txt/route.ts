@@ -172,7 +172,7 @@ schools in a number of states.
 ## Pages
 
 - [Home](${SITE_URL}/): what Novus does, for businesses and students.
-- [For Businesses](${SITE_URL}/partners): services, process, intake form, FAQ.
+- [For Businesses](${SITE_URL}/businesses): services, process, intake form, FAQ.
 - [For Students](${SITE_URL}/join): tracks, leadership ladder, FAQ.
 - [Apply](${SITE_URL}/apply): student application.
 - [Our Work](${SITE_URL}/showcase): client projects with live links and a map.

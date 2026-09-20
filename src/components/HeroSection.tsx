@@ -135,7 +135,7 @@ export default function HeroSection({ children }: { children?: ReactNode }) {
               Join as a Student
             </Link>
             <Link
-              href="/partners"
+              href="/businesses"
               className="inline-flex min-h-14 w-full items-center justify-center rounded-full border-2 border-transparent bg-n-yellow px-6 py-4 font-display text-base font-bold text-n-ink shadow-xl shadow-black/35 transition-all hover:scale-[1.02] hover:bg-n-yellow-dark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80"
             >
               Get Free Business Support

@@ -131,7 +131,7 @@ export default function RootLayout({
                 contactType: "customer service",
                 areaServed: "US",
                 availableLanguage: ["English", "Spanish", "French", "Chinese", "Korean", "Arabic"],
-                url: `${SITE_URL}/partners#contact`,
+                url: `${SITE_URL}/businesses#contact`,
               },
               hasOfferCatalog: {
                 "@type": "OfferCatalog",

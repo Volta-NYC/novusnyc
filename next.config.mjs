@@ -127,7 +127,7 @@ const nextConfig = {
       // they are 308 Permanent, matching the domain-level redirects.
       {
         source: "/contact",
-        destination: "/partners",
+        destination: "/businesses",
         permanent: true,
       },
       {
@@ -137,12 +137,12 @@ const nextConfig = {
       },
       {
         source: "/business-guides",
-        destination: "/partners",
+        destination: "/businesses",
         permanent: true,
       },
       {
         source: "/guides",
-        destination: "/partners",
+        destination: "/businesses",
         permanent: true,
       },
       {

@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   }
 
   revalidatePath("/");
-  revalidatePath("/partners");
+  revalidatePath("/businesses");
   revalidatePath("/partnerships");
   return NextResponse.json({ success: true, path, logoUrl });
 }
