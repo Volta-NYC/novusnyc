@@ -54,7 +54,7 @@ function Spotlights({ businesses, styles }: { businesses: PartnerBusiness[]; sty
   return (
     <div>
       <p className={`font-body text-sm leading-relaxed ${styles.muted}`}>
-        <span className={`font-semibold ${styles.strong}`}>Spotlights: </span>
+        <span className={`font-semibold ${styles.strong}`}>{businesses.length === 1 ? "Spotlight" : "Spotlights"}: </span>
         {businesses.map((business, index) => (
           <Fragment key={business.name}>
             {index > 0 && ", "}
