@@ -57,7 +57,7 @@ function monogram(partner: PublicPartnership): string {
   return partner.monogram ?? partner.shortName.split(" ").filter((word) => /^[A-Z]/.test(word)).map((word) => word[0]).join("").slice(0, 4);
 }
 
-export default function IntroductionMap({ partners, describedBy }: { partners: PublicPartnership[]; describedBy: string }) {
+export default function IntroductionMap({ partners }: { partners: PublicPartnership[] }) {
   const reduced = useReducedMotion() ?? false;
   const frameRef = useRef<HTMLDivElement>(null);
   const inView = useInView(frameRef, { once: true, amount: 0.2 });
@@ -205,7 +205,6 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
         className={`block h-full w-full touch-none select-none ${zoomedIn ? "cursor-grab active:cursor-grabbing" : ""}`}
         role="group"
         aria-label="Map of the organizations that introduce Novus to small businesses, and who introduced whom"
-        aria-describedby={describedBy}
       >
         <defs>
           <radialGradient id="pmap-glow">
@@ -437,14 +436,10 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
       )}
       </div>
 
-      {compact ? (
-        <div className="mt-6 border-t border-white/10 px-5 pt-6 md:px-0">
-          <MapKey />
-        </div>
-      ) : (
+      {compact ? null : (
         <div aria-live="polite" className="mt-6 grid min-h-[25rem] border-t border-white/10 pt-7 lg:min-h-[22rem] xl:min-h-[19.5rem] [&>*]:col-start-1 [&>*]:row-start-1">
-          <div aria-hidden={Boolean(focused)} className={`self-center ${fade} ${focused ? "pointer-events-none opacity-0" : "opacity-100 delay-100"}`}>
-            <MapKey />
+          <div aria-hidden={Boolean(focused)} className={`self-start ${fade} ${focused ? "pointer-events-none opacity-0" : "opacity-100 delay-100"}`}>
+            <p className="font-body text-sm text-white/45">Hover over an organization to see more</p>
           </div>
           {shown && (
             <div aria-hidden={!focused} className={`self-start ${fade} ${focused ? "opacity-100 delay-100" : "pointer-events-none opacity-0"}`}>
@@ -458,25 +453,6 @@ export default function IntroductionMap({ partners, describedBy }: { partners: P
         <PartnerSheet partner={byId.get(sheetId) as PublicPartnership} partnersById={byId} onClose={closeSheet} />
       )}
     </div>
-  );
-}
-
-function MapKey() {
-  const items = [
-    { key: "orange", label: "Business improvement districts, development and merchant organizations", tone: TONE_VAR.orange },
-    { key: "purple", label: "Chambers and business organizations", tone: TONE_VAR.purple },
-  ];
-  return (
-    <ul className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
-      {items.map((item) => (
-        <li key={item.key} className="flex items-start gap-3 font-body text-sm leading-snug text-white/80">
-          <svg width={32} height={16} viewBox="0 0 32 16" aria-hidden="true" className="mt-0.5 shrink-0">
-            <circle cx={16} cy={8} r={6} fill="white" stroke={item.tone} strokeWidth={3} />
-          </svg>
-          {item.label}
-        </li>
-      ))}
-    </ul>
   );
 }
 

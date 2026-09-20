@@ -6,7 +6,7 @@ import { EMAIL } from "@/lib/mail";
 import { getPublicPartnerships } from "@/lib/server/publicPartnerships";
 
 const DESCRIPTION =
-  "The chambers, business improvement districts and development corporations that introduce Novus NYC to small businesses, and what each relationship involves.";
+  "The chambers, business improvement districts, and development corporations that introduce Novus NYC to small businesses, and what each relationship involves.";
 
 // Open Graph and Twitter are set here so the page does not inherit the root
 // layout's pricing language while the founder settles it.
@@ -38,8 +38,6 @@ const DIVISION_OF_WORK = [
   },
 ];
 
-const MAP_NOTE_ID = "partnership-map-note";
-
 export default async function PartnersPage() {
   const partners = await getPublicPartnerships();
 
@@ -53,31 +51,22 @@ export default async function PartnersPage() {
               The organizations that introduce us to New York&apos;s small businesses.
             </h1>
             <p className="mt-6 max-w-2xl font-body text-lg leading-relaxed text-white/80">
-              Chambers, business improvement districts and development corporations know their merchants. We build the websites. Here is what each relationship involves.
+              Chambers, business improvement districts (BIDs), and development corporations know their merchants. We build the websites. Here is what each relationship involves.
             </p>
           </AnimatedSection>
         </div>
       </section>
 
-      <section id="introductions" className="relative scroll-mt-20 bg-n-dark pb-16 pt-6">
+      <section id="introductions" className="relative scroll-mt-20 bg-n-dark pb-8 pt-4">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <div className="border-t border-white/10 pt-10">
-            <h2 className="font-display text-2xl font-bold text-white md:text-3xl">How the introductions connect</h2>
-            <p className="mt-3 max-w-2xl font-body text-base leading-relaxed text-white/75">
-              Every organization connects to Novus. The dashed arrows show who introduced whom, including one introduction that came from a client whose site we built.
-            </p>
-            <p id={MAP_NOTE_ID} className="sr-only">
-              Select an organization to read its full description. The same descriptions are listed after the map for screen readers.
-            </p>
-            <a
-              href="#what-partnering-means"
-              className="sr-only focus:not-sr-only focus:mt-4 focus:inline-block focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:font-body focus:text-sm focus:font-semibold focus:text-n-ink"
-            >
-              Skip the map
-            </a>
-            <div className="-mx-5 mt-6 md:mx-0">
-              <IntroductionMapSection partners={partners} describedBy={MAP_NOTE_ID} />
-            </div>
+          <a
+            href="#what-partnering-means"
+            className="sr-only focus:not-sr-only focus:mb-4 focus:inline-block focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:font-body focus:text-sm focus:font-semibold focus:text-n-ink"
+          >
+            Skip the map
+          </a>
+          <div className="-mx-5 md:mx-0">
+            <IntroductionMapSection partners={partners} />
           </div>
         </div>
       </section>

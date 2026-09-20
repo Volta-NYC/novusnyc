@@ -10,6 +10,6 @@ const IntroductionMap = dynamic(() => import("./IntroductionMap"), {
   loading: () => <div className="aspect-[1000/680] w-full" aria-hidden="true" />,
 });
 
-export default function IntroductionMapSection({ partners, describedBy }: { partners: PublicPartnership[]; describedBy: string }) {
-  return <IntroductionMap partners={partners} describedBy={describedBy} />;
+export default function IntroductionMapSection({ partners }: { partners: PublicPartnership[] }) {
+  return <IntroductionMap partners={partners} />;
 }
