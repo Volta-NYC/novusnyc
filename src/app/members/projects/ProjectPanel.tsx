@@ -1,24 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Btn, useDialogBehavior } from "@/components/members/ui";
+import { Badge, Btn, useConfirm, useDialogBehavior } from "@/components/members/ui";
 import {
-  updateBusiness, subscribeChapters, notifyProjectAssigned, revalidatePublicPages, TECH_STATUSES, TECH_PRIORITIES,
-  type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
+  updateBusiness, deleteBusiness, subscribeChapters, revalidatePublicPages, TECH_STATUSES, TECH_PRIORITIES,
+  type Business, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { BUSINESS_SERVICES } from "@/lib/members/constants";
 import { formatPhone } from "@/lib/format";
-import { isInactiveMember } from "@/lib/members/roles";
 
-export type ProjectPanelFocus = "name" | "primaryLink" | "assignees" | "notes" | "public";
+export type ProjectPanelFocus = "name" | "primaryLink" | "notes" | "public";
 
 // Everything about one project, beside the list rather than over it — a modal
 // would hide the row you clicked and the ones around it.
 export default function ProjectPanel({
-  business, team, canEdit, canPublish, blocked, initialFocus, focusRequestKey, onClose, onStatus,
+  business, canEdit, canPublish, blocked, initialFocus, focusRequestKey, onClose, onStatus, onDeleted,
 }: {
   business: Business;
-  team: TeamMember[];
   canEdit: boolean;
   canPublish: boolean;
   blocked: string | null;
@@ -26,13 +24,15 @@ export default function ProjectPanel({
   focusRequestKey: number;
   onClose: () => void;
   onStatus: (status: TechStatus) => void;
+  onDeleted: () => void;
 }) {
   const [draft, setDraft] = useState(business);
   const [baseline, setBaseline] = useState(business);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [memberQuery, setMemberQuery] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const { ask: askDelete, Dialog: ConfirmDialog } = useConfirm();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [tab, setTab] = useState<"website" | "public">("website");
   const serviceOptions = BUSINESS_SERVICES;
@@ -52,40 +52,17 @@ export default function ProjectPanel({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const liveUrlInputRef = useRef<HTMLInputElement>(null);
   const previewUrlInputRef = useRef<HTMLInputElement>(null);
-  const assigneeSearchRef = useRef<HTMLInputElement>(null);
   const notesInputRef = useRef<HTMLTextAreaElement>(null);
   const publicToggleRef = useRef<HTMLInputElement>(null);
 
-  const assignees = useMemo(() => draft.assignees ?? [], [draft.assignees]);
   const sortedChapters = useMemo(
     () => [...chapters].sort((a, b) => a.sortOrder - b.sortOrder),
     [chapters],
   );
 
-  // Who is on this project is what the panel is for, so they are always
-  // listed. The rest of the directory only appears once you search for it —
-  // dumping sixty names to pick one or two is scrolling, not choosing.
-  const techTeam = useMemo(() => {
-    const active = team.filter((t) => !isInactiveMember(t.status));
-    const q = memberQuery.trim().toLowerCase();
-    const on = active.filter((t) => assignees.includes(t.id))
-      .sort((a, b) => a.name.localeCompare(b.name));
-    if (!q) return on;
-    const off = active
-      .filter((t) => !assignees.includes(t.id))
-      .filter((t) => t.name.toLowerCase().includes(q) || (t.email ?? "").toLowerCase().includes(q))
-      .sort((a, b) => {
-        const aTech = (a.divisions ?? []).includes("Tech"), bTech = (b.divisions ?? []).includes("Tech");
-        if (aTech !== bTech) return aTech ? -1 : 1;
-        return a.name.localeCompare(b.name);
-      })
-      .slice(0, 25);
-    return [...on, ...off];
-  }, [team, assignees, memberQuery]);
-
   const dirty = useMemo(() => {
     const keys: (keyof Business)[] = [
-      "name", "notes", "clientUrl", "previewUrl", "liveUrl", "assignees", "techPriority",
+      "name", "notes", "clientUrl", "previewUrl", "liveUrl", "techPriority",
       "ownerName", "ownerEmail", "phone", "address", "neighborhood", "chapterId",
       "showcaseEnabled", "showcaseFeaturedOnHome", "showcaseDescription", "activeServices",
       "showcaseColor", "showcaseImageData", "showcaseImageUrl",
@@ -106,22 +83,20 @@ export default function ProjectPanel({
   }, [dirty, onClose]);
   useDialogBehavior(true, requestClose, panelRef);
 
-  // The table doubles as a set of editing shortcuts: opening from Name, Note,
-  // Assigned or Public should land exactly where the user intended. Selecting
-  // text makes a replacement a single keystroke, like editing a spreadsheet.
+  // The table doubles as a set of editing shortcuts: opening from Name, Note
+  // or Public should land exactly where the user intended. Selecting text
+  // makes a replacement a single keystroke, like editing a spreadsheet.
   useEffect(() => {
     const publicField = initialFocus === "public";
     setTab(publicField ? "public" : "website");
     const frame = window.requestAnimationFrame(() => {
       const target = initialFocus === "name"
         ? nameInputRef.current
-        : initialFocus === "assignees"
-          ? assigneeSearchRef.current
-          : initialFocus === "notes"
-            ? notesInputRef.current
-            : initialFocus === "public"
-              ? publicToggleRef.current
-              : (business.liveUrl ? liveUrlInputRef.current : previewUrlInputRef.current ?? liveUrlInputRef.current);
+        : initialFocus === "notes"
+          ? notesInputRef.current
+          : initialFocus === "public"
+            ? publicToggleRef.current
+            : (business.liveUrl ? liveUrlInputRef.current : previewUrlInputRef.current ?? liveUrlInputRef.current);
       target?.focus();
       if (target instanceof HTMLInputElement && target.type !== "checkbox") target.select();
       if (target instanceof HTMLTextAreaElement) target.select();
@@ -144,7 +119,6 @@ export default function ProjectPanel({
         clientUrl: draft.clientUrl ?? "",
         previewUrl: draft.previewUrl ?? "",
         liveUrl: draft.liveUrl ?? "",
-        assignees: draft.assignees ?? [],
         techPriority: draft.techPriority,
         ownerName: draft.ownerName,
         ownerEmail: draft.ownerEmail,
@@ -165,10 +139,6 @@ export default function ProjectPanel({
         } : {}),
         lastTouchedAt: new Date().toISOString(),
       });
-      // Only the people newly added hear about it; the ones already on the
-      // project don't need telling again every time the notes change.
-      const added = (draft.assignees ?? []).filter((id) => !(business.assignees ?? []).includes(id));
-      if (added.length > 0) void notifyProjectAssigned({ ...business, ...draft }, added);
       const publicRefreshed = !publicDirty || await revalidatePublicPages();
       setBaseline(draft);
       setSaved(true);
@@ -181,11 +151,17 @@ export default function ProjectPanel({
     }
   };
 
-  const toggleAssignee = (id: string) => {
-    setDraft((d) => {
-      const cur = d.assignees ?? [];
-      return { ...d, assignees: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] };
-    });
+  const remove = () => {
+    askDelete(async () => {
+      setDeleting(true);
+      try {
+        await deleteBusiness(business.id);
+        if (business.showcaseEnabled) await revalidatePublicPages();
+        onDeleted();
+      } finally {
+        setDeleting(false);
+      }
+    }, `${business.name} is removed from the directory, along with any public cards for it.`);
   };
 
   const field = "min-h-10 w-full rounded-lg border border-white/10 bg-[#0F1014] px-3 py-2 text-[12px] text-white/90 placeholder:text-white/25 focus:border-[#F3E28D]/40 focus:outline-none";
@@ -373,53 +349,6 @@ export default function ProjectPanel({
                 />
               </div>
             ))}
-          </div>
-
-          {/* Who's working on it */}
-          <div className="mb-5">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-wide text-white/40">
-                Who&apos;s working on it
-                {assignees.length > 0 && <span className="ml-1.5 text-white/25">{assignees.length}</span>}
-              </p>
-            </div>
-            <input
-              ref={assigneeSearchRef}
-              className={`${field} mb-2`}
-              placeholder="Filter people…"
-              value={memberQuery}
-              onChange={(e) => setMemberQuery(e.target.value)}
-            />
-            <div className="max-h-52 overflow-y-auto rounded-md border border-white/10 bg-[#0F1014]">
-              {techTeam.map((t) => {
-                const on = assignees.includes(t.id);
-                return (
-                  <label
-                    key={t.id}
-                    className="flex cursor-pointer items-center gap-2 border-b border-white/5 px-2.5 py-1.5 last:border-b-0 hover:bg-white/[0.04]"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      disabled={!canEdit}
-                      onChange={() => toggleAssignee(t.id)}
-                      className="h-3.5 w-3.5 accent-[#F3E28D]"
-                    />
-                    <span className={`text-[12px] ${on ? "text-white" : "text-white/60"}`}>{t.name}</span>
-                    {(t.divisions ?? []).includes("Tech") && (
-                      <span className="ml-auto text-[9px] uppercase tracking-wide text-white/25">Tech</span>
-                    )}
-                  </label>
-                );
-              })}
-              {techTeam.length === 0 && (
-                <p className="px-2.5 py-3 text-[11px] text-white/30">
-                  {memberQuery.trim()
-                    ? `No active member matches “${memberQuery.trim()}”.`
-                    : "Nobody assigned yet — search above to add someone."}
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Notes */}
@@ -656,8 +585,12 @@ export default function ProjectPanel({
             {dirty && !saving && <span className="text-[11px] text-white/35">Unsaved changes</span>}
             {saved && <span className="text-[11px] text-green-400">Saved</span>}
             {saveError && <span role="alert" className="text-[11px] text-red-400">{saveError}</span>}
+            <Btn variant="danger" size="sm" className="ml-auto" onClick={remove} disabled={saving || deleting}>
+              {deleting ? "Deleting…" : "Delete project"}
+            </Btn>
           </footer>
         )}
+        <ConfirmDialog />
       </aside>
     </>
   );
