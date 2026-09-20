@@ -126,7 +126,6 @@ export default function ApplicantsPage() {
   const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(new Set());
   // Accept modal state
   const [acceptModalApp, setAcceptModalApp] = useState<ApplicationRecord | null>(null);
-  const [acceptRole, setAcceptRole] = useState("Analyst");
   const [acceptSendEmail, setAcceptSendEmail] = useState(true);
   const [acceptPlacement, setAcceptPlacement] = useState("");
   // Acceptance email settings live here rather than in the admin screen: they
@@ -241,7 +240,7 @@ export default function ApplicantsPage() {
     }
   };
 
-  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, role: string, placementId = "") => {
+  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, placementId = "") => {
     if (!user) throw new Error("not_authenticated");
     const token = await getAuthToken();
     // The Accepted stamp is applied by the promote endpoint once the member row
@@ -258,7 +257,7 @@ export default function ApplicantsPage() {
         email: app.email,
         schoolName: app.schoolName,
         grade: gradeToClassOf(app.grade, app.createdAt),
-        role,
+        role: DEFAULT_MEMBER_ROLE,
         tracksSelected: app.tracksSelected,
         applicationId: app.id,
         markAccepted: true,
@@ -301,7 +300,7 @@ export default function ApplicantsPage() {
     if (!acceptModalApp) return;
     setBulkPromoting(true);
     try {
-      const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptRole, acceptPlacement);
+      const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptPlacement);
       setStatusMessage(action === "created"
         ? `Accepted ${acceptModalApp.fullName} and added them to the member directory.`
         : `Accepted ${acceptModalApp.fullName}. They were already in the directory, so their record was updated.`);
@@ -328,7 +327,7 @@ export default function ApplicantsPage() {
       for (const app of selectedApps) {
         try {
           // eslint-disable-next-line no-await-in-loop
-          await promoteApplicant(app, true, DEFAULT_MEMBER_ROLE);
+          await promoteApplicant(app, true);
           ok += 1;
         } catch {
           failed += 1;
@@ -437,16 +436,6 @@ export default function ApplicantsPage() {
           <p className="text-white/60 text-sm font-body">
             {acceptModalApp ? `${acceptModalApp.fullName} · ${acceptModalApp.email}` : ""}
           </p>
-          <Field label="Team Role">
-            <Select
-              value={acceptRole}
-              onChange={(e) => setAcceptRole(e.target.value)}
-            >
-              {["Analyst", "Senior Analyst", "Associate", "Senior Associate", "Board"].map((role) => (
-                <option key={role} value={role}>{role}</option>
-              ))}
-            </Select>
-          </Field>
           <Field label="Placement">
             <Select
               value={acceptPlacement}
@@ -722,7 +711,6 @@ export default function ApplicantsPage() {
                                     variant="primary"
                                     className={`members-pill-btn whitespace-nowrap ${!canAcceptAction ? "opacity-50" : ""}`}
                                     onClick={() => {
-                                      setAcceptRole(app.finalDecisionRole || "Analyst");
                                       setAcceptSendEmail(true);
                                       setAcceptModalApp(app);
                                     }}
