@@ -1,13 +1,13 @@
 import type { Borough } from "@/data/partnerships";
 
-export const VIEW_WIDTH = 1290;
-export const VIEW_HEIGHT = 920;
-export const CENTER = { x: 645, y: 416 };
+export const VIEW_WIDTH = 1360;
+export const VIEW_HEIGHT = 930;
+export const CENTER = { x: 680, y: 420 };
 export const NOVUS_RADIUS = 52;
-export const NODE_RADIUS = { deep: 27, active: 21 };
+export const NODE_RADIUS = 33;
 export const LABEL_SIZE = 14;
 
-const OUTER = { rx: 396, ry: 296 };
+const OUTER = { rx: 470, ry: 320 };
 const SECTOR_GAP_UNITS = 1;
 const MIN_SECTOR_UNITS = 2;
 const CHAR_WIDTH = 0.56;
@@ -248,7 +248,7 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
     members.forEach((partner, index) => {
       const angle = angleAt(cursor + step * (index + 0.5));
       const point = onEllipse(angle);
-      const r = NODE_RADIUS[partner.depth];
+      const r = NODE_RADIUS;
       const label = placeLabel({ ...point, r }, angle, partner.shortName);
       nodes.push({ id: partner.id, ...point, r, angle, label });
     });
