@@ -33,9 +33,9 @@ export const EMAIL = {
 } as const;
 
 /**
- * Addresses the team-email composer may send from. Every entry must be a
- * verified alias on the sending Gmail account — an unverified one is rejected
- * by Gmail at submission time, not silently downgraded.
+ * Addresses this deployment may send from. The Workspace SMTP relay accepts
+ * any address in the domain, so this list is the deliberate shortlist rather
+ * than a technical limit.
  */
 export const TEAM_EMAIL_ALLOWED_FROM_DEFAULT = [
   EMAIL.info,

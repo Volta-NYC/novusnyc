@@ -131,6 +131,9 @@ const nextConfig = {
         destination: "/partners",
         permanent: true,
       },
+      // The email section is one page now; Compose is gone.
+      { source: "/members/email/templates",   destination: "/members/email", permanent: false },
+      { source: "/members/email/automations", destination: "/members/email", permanent: false },
       {
         source: "/contact",
         destination: "/businesses",

@@ -285,9 +285,7 @@ export type SystemEmailTemplateKey =
   | "interviewer_reschedule_notify"
   | "pod_meeting_reminder"
   | "pod_attendance_missing"
-  | "pod_task_assigned"
   | "pod_task_due_soon"
-  | "project_assigned"
   | "project_draft_ready"
   | "infraction_issued"
   | "service_hours_summary"
@@ -1795,16 +1793,6 @@ async function notify(
 
 // ── Tech project notifications ───────────────────────────────────────────────
 
-export async function notifyProjectAssigned(
-  business: Business, newAssigneeIds: string[],
-): Promise<void> {
-  if (newAssigneeIds.length === 0) return;
-  await notify("project_assigned", {
-    businessId: business.id,
-    addedAssigneeIds: newAssigneeIds,
-  });
-}
-
 export async function notifyDraftReady(business: Business): Promise<void> {
   // Goes to whoever can act on it: the leads, not the whole directory.
   await notify("project_draft_ready", { businessId: business.id });
@@ -1845,14 +1833,12 @@ export async function createPodAssignment(
   if (error) throw new Error(error.message);
   await writeAuditLog({ action: "create", collection: "assignments", recordId: id, details: { podId: data.podId, title: data.title } });
 
-  await notify("pod_task_assigned", { assignmentId: id });
 }
 
 export async function updatePodAssignment(id: string, patch: Partial<PodAssignment>): Promise<void> {
   const { error } = await supabase.from("assignments")
     .update(toRow({ ...patch, updatedAt: nowISO() })).eq("id", id);
   if (error) throw new Error(error.message);
-  if (patch.assignedMemberIds) await notify("pod_task_assigned", { assignmentId: id });
 }
 
 export async function completePodAssignment(id: string, done: boolean): Promise<void> {

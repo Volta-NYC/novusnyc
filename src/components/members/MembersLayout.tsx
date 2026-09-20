@@ -66,7 +66,7 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/members/email",
-    label: "Email",
+    label: "Emails",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>,
   },
   {

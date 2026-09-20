@@ -20,11 +20,6 @@ function fmtDate(d: string): string {
     : parsed.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 
-function fmtTime(value: unknown): string {
-  const parsed = new Date(String(value ?? ""));
-  return Number.isNaN(parsed.getTime()) ? "Time listed in the portal" : parsed.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
-}
-
 function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000);
 }
@@ -45,138 +40,16 @@ async function sendClaimed(
 async function runSweep(viaCron: boolean) {
   const sb = getSupabaseAdmin();
   const today = new Date();
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
   const report: Record<string, { sent: number; considered: number }> = {};
 
-  const [podsResult, membersResult, podMembersResult] = await Promise.all([
-    sb.from("pods").select("id, name, slug, status"),
-    sb.from("team").select("id, name, email, status, deleted_at"),
-    sb.from("pod_members").select("pod_id, member_id, role, left_at"),
-  ]);
-  if (podsResult.error) throw new Error(`pods: ${podsResult.error.message}`);
+  const membersResult = await sb.from("team").select("id, name, email, status, deleted_at");
   if (membersResult.error) throw new Error(`team: ${membersResult.error.message}`);
-  if (podMembersResult.error) throw new Error(`pod_members: ${podMembersResult.error.message}`);
-  const pods = podsResult.data;
   const members = membersResult.data;
-  const podMembers = podMembersResult.data;
-
-  const podById = new Map((pods ?? []).map((p) => [String(p.id), p]));
   const memberById = new Map(
     (members ?? [])
       .filter((m) => !m.deleted_at && String(m.status ?? "") !== "Inactive")
       .map((m) => [String(m.id), m]),
   );
-  const roster = (podMembers ?? []).filter((m) => !m.left_at);
-
-  const emailsFor = (podId: string, role?: string) =>
-    roster
-      .filter((m) => m.pod_id === podId && (!role || m.role === role))
-      .map((m) => memberById.get(String(m.member_id)))
-      .filter(Boolean)
-      .map((m) => String((m as { email?: string }).email ?? ""))
-      .filter(Boolean);
-
-  // ── Meeting tomorrow ───────────────────────────────────────────────────────
-  {
-    // Everything from today through tomorrow that hasn't been sent yet. A
-    // missed cron run used to lose that day's reminders permanently; now the
-    // next run still catches them, and the ledger stops anyone being told twice.
-    const ahead = new Date(today); ahead.setDate(ahead.getDate() + 1);
-    const { data: meetings, error: meetingsError } = await sb.from("pod_meetings")
-      .select("id, pod_id, meets_on, title, starts_at, meeting_url")
-      .gte("meets_on", iso(today)).lte("meets_on", iso(ahead));
-    if (meetingsError) throw new Error(`pod_meetings reminders: ${meetingsError.message}`);
-
-    let sent = 0;
-    for (const m of meetings ?? []) {
-      const pod = podById.get(String(m.pod_id));
-      if (!pod || pod.status === "Archived") continue;
-      const to = emailsFor(String(m.pod_id));
-      if (to.length === 0) continue;
-      const n = await sendClaimed("pod_meeting_reminder", `${String(m.id)}:${String(m.starts_at ?? m.meets_on)}`, to, {
-        memberName: "there",
-        podName: String(pod.name),
-        meetingDate: fmtDate(String(m.meets_on)),
-        meetingTime: fmtTime(m.starts_at),
-        meetingTitle: String(m.title ?? "") || `${pod.name} meeting`,
-        meetingLink: String(m.meeting_url || `${SITE_URL}/members/pods/${pod.slug}`),
-        portalLink: `${SITE_URL}/members/pods/${pod.slug}`,
-      });
-      sent += n;
-      if (n > 0) {
-        const { error } = await sb.from("pod_meetings").update({ reminder_sent_at: new Date().toISOString() }).eq("id", m.id);
-        if (error) throw new Error(`pod meeting reminder marker: ${error.message}`);
-      }
-    }
-    report.meeting_reminder = { sent, considered: (meetings ?? []).length };
-  }
-
-  // ── Attendance still unfilled a day later ──────────────────────────────────
-  {
-    // A week back, so an unfilled sheet keeps surfacing rather than being
-    // asked about exactly once, the day after, and then forgotten.
-    const from = new Date(today); from.setDate(from.getDate() - 7);
-    const until = new Date(today); until.setDate(until.getDate() - 1);
-    const { data: meetings, error: meetingsError } = await sb.from("pod_meetings")
-      .select("id, pod_id, meets_on")
-      .gte("meets_on", iso(from)).lte("meets_on", iso(until))
-      .is("attendance_finalized_at", null);
-    if (meetingsError) throw new Error(`pod_meetings attendance: ${meetingsError.message}`);
-
-    let sent = 0;
-    for (const m of meetings ?? []) {
-      const pod = podById.get(String(m.pod_id));
-      if (!pod) continue;
-      const lits = emailsFor(String(m.pod_id), "lit");
-      if (lits.length === 0) continue;
-      const n = await sendClaimed("pod_attendance_missing", String(m.id), lits, {
-        litName: "there",
-        podName: String(pod.name),
-        meetingDate: fmtDate(String(m.meets_on)),
-        portalLink: `${SITE_URL}/members/pods/${pod.slug}`,
-      });
-      sent += n;
-      if (n > 0) {
-        const { error } = await sb.from("pod_meetings").update({ nudge_sent_at: new Date().toISOString() }).eq("id", m.id);
-        if (error) throw new Error(`attendance nudge marker: ${error.message}`);
-      }
-    }
-    report.attendance_missing = { sent, considered: (meetings ?? []).length };
-  }
-
-  // ── Task due in two days ───────────────────────────────────────────────────
-  {
-    // Anything due within the next two days that is still open.
-    const ahead = new Date(today); ahead.setDate(ahead.getDate() + 2);
-    const { data: tasks, error: tasksError } = await sb.from("assignments")
-      .select("id, pod_id, title, due_date, assigned_member_ids, completed_at")
-      .gte("due_date", iso(today)).lte("due_date", iso(ahead))
-      .is("completed_at", null).is("deleted_at", null)
-      .not("pod_id", "is", null);
-    if (tasksError) throw new Error(`pod assignments: ${tasksError.message}`);
-
-    let sent = 0;
-    for (const t of tasks ?? []) {
-      const pod = podById.get(String(t.pod_id));
-      const ids = (t.assigned_member_ids ?? []) as string[];
-      const to = ids.map((id) => memberById.get(id))
-        .filter(Boolean).map((m) => String((m as { email?: string }).email ?? "")).filter(Boolean);
-      if (to.length === 0) continue;
-      const n = await sendClaimed("pod_task_due_soon", `${String(t.id)}:${String(t.due_date)}`, to, {
-        memberName: "there",
-        taskTitle: String(t.title ?? "Your task"),
-        podName: pod ? String(pod.name) : "your pod",
-        dueDate: fmtDate(String(t.due_date)),
-        portalLink: `${SITE_URL}/members/work`,
-      });
-      sent += n;
-      if (n > 0) {
-        const { error } = await sb.from("assignments").update({ due_reminder_sent_at: new Date().toISOString() }).eq("id", t.id);
-        if (error) throw new Error(`assignment reminder marker: ${error.message}`);
-      }
-    }
-    report.task_due_soon = { sent, considered: (tasks ?? []).length };
-  }
 
   // ── Semiannual certified-hours summary ────────────────────────────────────
   {
