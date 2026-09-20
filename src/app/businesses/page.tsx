@@ -23,7 +23,7 @@ import petiteDumplingStorefront from "../../../public/petite-dumpling-storefront
 export const metadata: Metadata = {
   title: "Free Help for NYC Small Businesses",
   description:
-    "NYC small businesses: get a free website, social media, grant writing, or SEO from a dedicated student team. No cost, no catch. Novus NYC is a nonprofit corporation incorporated in New York State.",
+    "NYC small businesses: get a free website, social media, grant writing, or SEO from a dedicated student team. Design and development at no charge. Novus NYC is a nonprofit corporation incorporated in New York State.",
   openGraph: {
     title: "Free Help for NYC Small Businesses | Novus NYC",
     description:
@@ -110,7 +110,7 @@ const SERVICES = [
 const PARTNER_FAQS = [
   {
     q: "Is this really free?",
-    a: "Yes. Novus NYC is a nonprofit corporation incorporated in New York State. There are no fees, no contracts, and no catch. Our student teams do everything at no cost to your business.",
+    a: "Design and development are 100% free. Novus NYC is a nonprofit corporation incorporated in New York State, and our student teams do the work at no charge to your business. The only costs are the ones every website has: a domain name and hosting, which together run about $10 a month. The finished site and its code are yours.",
   },
   {
     q: "How long does a project take?",
