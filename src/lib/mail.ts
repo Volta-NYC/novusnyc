@@ -2,16 +2,19 @@
  * Every mailbox the site references, in one place.
  *
  * ─── Sending requires more than a delivering domain ─────────────────────────
- * Cloudflare Email Routing receives mail for novusnyc.org and forwards it to
- * Gmail. It cannot send. Outbound still goes through Gmail's SMTP, which means
- * two things must stay true or messages get rejected or spam-filed:
+ * Google Workspace both receives and sends for novusnyc.org. Outbound goes
+ * through Gmail's SMTP, which means two things must stay true or messages get
+ * rejected, spam-filed, or fail DMARC:
  *
- *   1. Every address below is a verified "Send mail as" alias on the single
- *      Gmail account whose credentials are in SMTP_USER / SMTP_PASS.
- *   2. The SPF record authorises Google as well as Cloudflare:
- *        v=spf1 include:_spf.mx.cloudflare.net include:_spf.google.com ~all
+ *   1. SMTP_USER is a Workspace mailbox on novusnyc.org, not a consumer
+ *      @gmail.com account. Google DKIM-signs with the authenticated account's
+ *      own domain, so a consumer account signs d=gmail.com, which never aligns
+ *      with a From: address on this domain.
+ *   2. Every address below is a verified "Send mail as" alias on that mailbox.
  *
- * Verify both before adding an address here:
+ * SPF is Google-only: v=spf1 include:_spf.google.com ~all
+ *
+ * Verify before adding an address here:
  *
  *   dig +short MX novusnyc.org
  *   dig +short TXT novusnyc.org | grep spf1

@@ -216,17 +216,24 @@ All four mailboxes are `@novusnyc.org` — `info@`, `ethan@`, `andrew@`,
 `tahmid@` — defined once in `src/lib/mail.ts`. Never hardcode an address
 elsewhere; import `EMAIL` instead.
 
-Cloudflare Email Routing **receives** for the domain and forwards to Gmail. It
-cannot send. Outbound still goes through Gmail SMTP, so two conditions must
-hold or messages are rejected or spam-filed:
+Google Workspace **receives** for `novusnyc.org` (MX `smtp.google.com`) and
+sends. Cloudflare Email Routing was retired for this domain in September 2026
+and its DNS moved to Vercel. Outbound goes through Gmail SMTP, so two
+conditions must hold or messages are rejected, spam-filed, or fail DMARC:
 
-1. Every address is a verified "Send mail as" alias on the single Gmail account
-   in `SMTP_USER` / `SMTP_PASS`. Gmail rejects an unverified sender outright
-   rather than falling back to the account address.
-2. SPF authorises Google as well as Cloudflare:
-   `v=spf1 include:_spf.mx.cloudflare.net include:_spf.google.com ~all`
+1. `SMTP_USER` is a **Workspace mailbox on `novusnyc.org`**, never a consumer
+   `@gmail.com` account. Google DKIM-signs with the authenticated account's own
+   domain, so a consumer account signs `d=gmail.com`, which does not align with
+   a `From: …@novusnyc.org` header and fails DMARC no matter how the "Send mail
+   as" aliases are set up.
+2. Every address is a verified "Send mail as" alias on that mailbox. Gmail
+   rejects an unverified sender outright rather than falling back to the
+   account address.
 
-Verify both before adding an address:
+SPF is Google-only — `v=spf1 include:_spf.google.com ~all`. Do not re-add the
+Cloudflare include for this domain.
+
+Verify before adding an address:
 
 ```bash
 dig +short MX novusnyc.org; dig +short TXT novusnyc.org | grep spf1
