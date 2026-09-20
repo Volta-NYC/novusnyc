@@ -6,7 +6,7 @@ import { EMAIL } from "@/lib/mail";
 import { getPublicPartnerships } from "@/lib/server/publicPartnerships";
 
 const DESCRIPTION =
-  "The chambers, business improvement districts, and development corporations that introduce Novus NYC to small businesses, and what each relationship involves.";
+  "The chambers of commerce, business improvement districts, and development corporations that introduce Novus NYC to small businesses, and what each relationship involves.";
 
 // Open Graph and Twitter are set here so the page does not inherit the root
 // layout's pricing language while the founder settles it.
@@ -51,7 +51,7 @@ export default async function PartnersPage() {
               The organizations that introduce us to New York&apos;s small businesses.
             </h1>
             <p className="mt-6 max-w-2xl font-body text-lg leading-relaxed text-white/80">
-              Chambers, business improvement districts (BIDs), and development corporations know their merchants. We build the websites. Here is what each relationship involves.
+              Chambers of commerce, business improvement districts (BIDs), and development corporations know their merchants. We build the websites. Here is what each relationship involves.
             </p>
           </AnimatedSection>
         </div>

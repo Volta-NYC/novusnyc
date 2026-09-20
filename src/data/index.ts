@@ -78,6 +78,7 @@ export const communityPartners = [
   { name: "Staten Island Business Outreach Center", logo: "/partners/logos/siboc.png", website: "https://siboc.org/", important: false },
   // No site of its own; the link that was here belonged to a different group.
   { name: "East New York Merchants Association", logo: "/partners/logos/east-new-york-merchants.png", important: false },
+  { name: "Local Development Corporation of East New York", logo: "/partners/logos/ldceny.png", website: "https://www.ldceny.org/", important: false },
 ];
 
 export type CommunityPartner = (typeof communityPartners)[number];

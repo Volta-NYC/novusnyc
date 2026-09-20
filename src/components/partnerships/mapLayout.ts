@@ -156,12 +156,23 @@ function placeLabel(node: Circle, angle: number, text: string, stagger = 0): Lab
   const ax = node.x + cos * gap;
   const ay = node.y + sin * gap;
 
+  // The offset the text reads away from has to be the full gap, not its
+  // projection: a circle at 45 degrees would otherwise set its label only
+  // 0.7 of a radius out and the first line would sit on the logo.
   if (Math.abs(cos) > 0.5) {
-    return { x: ax, y: ay - blockHeight / 2 + fontSize * 0.85, anchor: cos > 0 ? "start" : "end", lines, fontSize, visible: true };
+    return {
+      x: node.x + Math.sign(cos) * gap,
+      y: ay - blockHeight / 2 + fontSize * 0.85,
+      anchor: cos > 0 ? "start" : "end",
+      lines,
+      fontSize,
+      visible: true,
+    };
   }
+  const below = node.y + Math.sign(sin) * gap;
   return {
     x: ax,
-    y: sin > 0 ? ay + fontSize * 0.9 : ay - blockHeight + fontSize * 0.85,
+    y: sin > 0 ? below + fontSize * 0.9 : below - blockHeight + fontSize * 0.85,
     anchor: "middle",
     lines,
     fontSize,
@@ -182,7 +193,13 @@ function labelBox(label: LabelLayout): Box {
 }
 
 function circleBox(circle: Circle): Box {
-  return { x0: circle.x - circle.r - 3, y0: circle.y - circle.r - 3, x1: circle.x + circle.r + 3, y1: circle.y + circle.r + 3 };
+  return { x0: circle.x - circle.r - 6, y0: circle.y - circle.r - 6, x1: circle.x + circle.r + 6, y1: circle.y + circle.r + 6 };
+}
+
+function boxHitsCircle(box: Box, circle: Circle, pad: number): boolean {
+  const nearestX = Math.max(box.x0, Math.min(circle.x, box.x1));
+  const nearestY = Math.max(box.y0, Math.min(circle.y, box.y1));
+  return Math.hypot(circle.x - nearestX, circle.y - nearestY) < circle.r + pad;
 }
 
 function overlaps(a: Box, b: Box): boolean {
@@ -281,7 +298,9 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
   for (const node of labelOrder) {
     const fits = (label: LabelLayout) => {
       const box = labelBox(label);
-      return inBounds(box) && !occupied.some((other) => other.id !== node.id && overlaps(box, other.box));
+      return inBounds(box)
+        && !boxHitsCircle(box, node, 5)
+        && !occupied.some((other) => other.id !== node.id && overlaps(box, other.box));
     };
     const deep = depthOf.get(node.id) === "deep";
     // Crowded labels try a slight turn first, then dropping a row below their
