@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope, homePath } from "@/lib/members/chapterScope";
 import { type AuthRole, subscribeSiteSettings } from "@/lib/members/storage";
 import { supabase } from "@/lib/supabaseClient";
 import { Modal } from "@/components/members/ui";
@@ -282,14 +283,22 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   };
 
   const visibleNavItems = getNavItemsForRole(authRole, isTechLead);
+  const scope = useChapterScope();
+  // Route matching and permissions are written against the home chapter's
+  // paths, so a chapter namespace is stripped before either runs.
+  const homePathname = homePath(pathname, scope.chapters);
 
   useEffect(() => {
     if (loading || !user) return;
+    // Chapters arrive from the database, and until they do a namespaced path
+    // cannot be resolved back to its home path. Guarding early would bounce
+    // someone out of /members/chicago/... before the list loads.
+    if (scope.chapters.length === 0) return;
     const allowedRoots = getAllowedRootsForRole(authRole, isTechLead);
-    if (!isAllowedPath(pathname, allowedRoots)) {
-      router.replace(getDefaultMembersPath(authRole));
+    if (!isAllowedPath(homePathname, allowedRoots)) {
+      router.replace(scope.scopedHref(getDefaultMembersPath(authRole)));
     }
-  }, [authRole, isTechLead, loading, pathname, router, user]);
+  }, [authRole, homePathname, isTechLead, loading, router, scope, user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -485,16 +494,16 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
           {visibleNavItems.map((item) => {
             const matchRoots = item.activeMatchRoots?.length ? item.activeMatchRoots : [item.href];
             const inMatch = item.activeOnlyExact
-              ? pathname === item.href
-              : (pathname === item.href
-                  || matchRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`))
-                  || (item.startWithRoots?.some((root) => pathname.startsWith(root)) ?? false));
-            const excluded = item.excludeMatchRoots?.some((root) => pathname === root || pathname.startsWith(`${root}/`)) ?? false;
+              ? homePathname === item.href
+              : (homePathname === item.href
+                  || matchRoots.some((root) => homePathname === root || homePathname.startsWith(`${root}/`))
+                  || (item.startWithRoots?.some((root) => homePathname.startsWith(root)) ?? false));
+            const excluded = item.excludeMatchRoots?.some((root) => homePathname === root || homePathname.startsWith(`${root}/`)) ?? false;
             const isActive = inMatch && !excluded;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={scope.scopedHref(item.href)}
                 onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? item.label : undefined}
                 aria-label={sidebarCollapsed ? item.label : undefined}
@@ -509,6 +518,38 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        {/* Chapter switcher. Two chapters are two portals; this is the only
+            door between them, and it stays out of the way at the bottom. */}
+        {scope.chapters.length > 1 && (
+          <div className={`px-2 pb-1 pt-2 border-t ${tone.sidebarBorder} shrink-0`}>
+            {!sidebarCollapsed && (
+              <p className={`px-1 pb-1 text-[9px] uppercase tracking-wider ${tone.userRole}`}>Chapter</p>
+            )}
+            <div className={sidebarCollapsed ? "space-y-0.5" : "flex gap-1"}>
+              {scope.chapters.map((chapter, index) => {
+                const href = index === 0
+                  ? homePathname
+                  : `/members/${chapter.slug}${homePathname.slice("/members".length)}`;
+                const isCurrent = chapter.id === scope.chapterId;
+                return (
+                  <Link
+                    key={chapter.id}
+                    href={href}
+                    onClick={() => setSidebarOpen(false)}
+                    title={sidebarCollapsed ? chapter.name : undefined}
+                    aria-current={isCurrent ? "true" : undefined}
+                    className={`flex-1 rounded-md px-2 py-1 text-center text-[11px] font-body transition-colors ${
+                      isCurrent ? tone.navActive : tone.navInactive
+                    }`}
+                  >
+                    {sidebarCollapsed ? chapter.name.slice(0, 2).toUpperCase() : chapter.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* User / footer */}
         <div className={`p-2 border-t ${tone.sidebarBorder} space-y-0.5 shrink-0`}>

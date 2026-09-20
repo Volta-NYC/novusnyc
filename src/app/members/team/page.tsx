@@ -16,6 +16,7 @@ import {
   type Pod, type PodMember, type MemberContribution,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope, inChapter } from "@/lib/members/chapterScope";
 import TrackAvatar, { getMemberTrack, TRACK_SORT_ORDER, type TrackKey } from "@/components/members/TrackAvatar";
 import {
   MEMBER_ROLES, DEFAULT_MEMBER_ROLE, isInactiveMember,
@@ -134,6 +135,8 @@ export default function TeamPage() {
   const [inviteAllProgress, setInviteAllProgress] = useState({ sent: 0, total: 0 });
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
+  const scope = useChapterScope();
+  const homeChapterId = scope.chapters[0]?.id ?? null;
   const canEdit = authRole === "owner";
   const isMemberRestricted = authRole === "member";
   const [schoolOptions, setSchoolOptions] = useState<string[]>([]);
@@ -336,6 +339,9 @@ export default function TeamPage() {
   };
 
   const filtered = team.filter(member => {
+    // Members belong to a chapter, and each chapter's portal lists its own.
+    // Rows from before chapters existed carry none, and they are all New York.
+    if (!inChapter(member.chapterId, scope.chapterId, homeChapterId)) return false;
     const isInactive = isInactiveMember(member.status);
 
     if (showOnlyInactive) {

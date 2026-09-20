@@ -14,6 +14,7 @@ import {
   type Business, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope, inChapter } from "@/lib/members/chapterScope";
 import ProjectPanel, { type ProjectPanelFocus } from "./ProjectPanel";
 import PublicCardOrderModal from "./PublicCardOrderModal";
 
@@ -107,9 +108,10 @@ function ProjectsPageInner() {
   const [businesses, setBusinesses] = useState<Business[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [chapters, setChapters]     = useState<Chapter[]>([]);
-  // Which market's clients we're looking at. Tech work is remote, but the
-  // clients themselves are firmly in one city or the other.
-  const [chapterId, setChapterId]   = useState<string | null>(null);
+  // The chapter comes from the URL now: /members/projects is New York and
+  // /members/chicago/projects is Chicago, each a list of its own.
+  const scope = useChapterScope();
+  const chapterId = scope.chapterId;
   // The view is addressable, so /members/projects?view=leads is linkable and the
   // retired /members/projects/discovery route has somewhere real to land.
   const searchParams = useSearchParams();
@@ -147,7 +149,7 @@ function ProjectsPageInner() {
     if (!businesses) return [];
     const q = search.trim().toLowerCase();
     let list = businesses.filter((b) => !b.archived);
-    if (chapterId) list = list.filter((b) => (b.chapterId ?? defaultChapterId) === chapterId);
+    list = list.filter((b) => inChapter(b.chapterId, chapterId, defaultChapterId));
 
     list = view === "leads" ? list.filter(isLead) : list.filter((b) => !isLead(b));
 
@@ -172,7 +174,7 @@ function ProjectsPageInner() {
     for (const s of TECH_STATUSES) c[s] = 0;
     for (const b of businesses ?? []) {
       if (b.archived || isLead(b)) continue;
-      if (chapterId && (b.chapterId ?? defaultChapterId) !== chapterId) continue;
+      if (!inChapter(b.chapterId, chapterId, defaultChapterId)) continue;
       c[b.techStatus ?? "Backlog"] = (c[b.techStatus ?? "Backlog"] ?? 0) + 1;
     }
     return c;
@@ -448,23 +450,6 @@ function ProjectsPageInner() {
             {v.label}
           </button>
         ))}
-        {chapters.length > 1 && (
-          <span className="ml-3 flex flex-wrap items-center gap-1.5">
-            {[{ id: null, name: "All markets" }, ...[...chapters].sort((a, b) => a.sortOrder - b.sortOrder)].map((c) => (
-              <button
-                key={c.id ?? "all"}
-                onClick={() => setChapterId(c.id)}
-                className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-                  chapterId === c.id
-                    ? "border-white/35 bg-white/10 text-white/85"
-                    : "border-white/10 bg-white/[0.03] text-white/50 hover:border-white/25 hover:text-white/80"
-                }`}
-              >
-                {c.name}
-              </button>
-            ))}
-          </span>
-        )}
       </div>
 
       {/* The pipeline doubles as the filter, so each tier carries its own

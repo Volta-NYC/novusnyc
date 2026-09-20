@@ -5,13 +5,14 @@ import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import { Badge, LoadError, PageHeader, SkeletonRows, StatCard } from "@/components/members/ui";
 import {
-  subscribeChapters, subscribePodAssignments, subscribePodMeetings,
+  subscribePodAssignments, subscribePodMeetings,
   subscribePodMembers, subscribePods, subscribeTeam,
-  type Chapter, type Pod, type PodAssignment, type PodMeeting,
+  type Pod, type PodAssignment, type PodMeeting,
   type PodMember, type TeamMember,
 } from "@/lib/members/storage";
 import { getPodDivision, POD_DIVISION_META } from "@/lib/members/constants";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope, inChapter } from "@/lib/members/chapterScope";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -27,7 +28,6 @@ export default function PodsPage() {
   const [meetings, setMeetings] = useState<PodMeeting[]>([]);
   const [tasks, setTasks] = useState<PodAssignment[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
-  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loadErrors, setLoadErrors] = useState<Record<string, string | null>>({});
   const rememberError = (key: string, error: string | null) => setLoadErrors((current) => current[key] === error ? current : { ...current, [key]: error });
 
@@ -36,7 +36,6 @@ export default function PodsPage() {
   useEffect(() => subscribePodMeetings((rows, state) => { setMeetings(rows); rememberError("meetings", state.error); }), []);
   useEffect(() => subscribePodAssignments((rows, state) => { setTasks(rows); rememberError("assignments", state.error); }), []);
   useEffect(() => subscribeTeam((rows, state) => { setTeam(rows); rememberError("team", state.error); }), []);
-  useEffect(() => subscribeChapters((rows, state) => { setChapters(rows); rememberError("chapters", state.error); }), []);
 
   const myId = userProfile?.id ?? null;
   const nameById = useMemo(() => new Map(team.map((member) => [member.id, member.name])), [team]);
@@ -61,7 +60,12 @@ export default function PodsPage() {
     });
   }, [pods, members, meetings, tasks, myId]);
 
-  const visible = isAdmin ? rows : rows.filter((row) => row.iAmIn);
+  const scope = useChapterScope();
+  const homeChapterId = scope.chapters[0]?.id ?? null;
+  const currentChapter = scope.chapters.find((c) => c.id === scope.chapterId) ?? null;
+  // One chapter per page, so the pod cards stop being grouped under headings.
+  const inScope = rows.filter((row) => inChapter(row.pod.chapterId, scope.chapterId, homeChapterId));
+  const visible = isAdmin ? inScope : inScope.filter((row) => row.iAmIn);
   const totals = useMemo(() => ({
     people: new Set(visible.flatMap((row) => row.roster.map((member) => member.memberId))).size,
     tasks: visible.reduce((sum, row) => sum + row.openTasks.length, 0),
@@ -77,7 +81,7 @@ export default function PodsPage() {
       <PageHeader
         title="Marketing & Finance"
         subtitle={isAdmin
-          ? "Run weekly pods, attendance, assignments, deadlines, grants, and service hours in one place."
+          ? `Pods, attendance, assignments, deadlines, grants, and service hours for ${scope.name}.`
           : "Your meetings, assignments, deadlines, and service hours."}
       />
 
@@ -97,19 +101,17 @@ export default function PodsPage() {
             <StatCard label="Pods without a LIT" value={totals.unstaffed} color={totals.unstaffed ? "text-amber-700" : "text-emerald-700"} />
           </div>
 
-          {[...chapters].sort((a, b) => a.sortOrder - b.sortOrder).map((chapter) => {
-            const chapterRows = visible.filter((row) => row.pod.chapterId === chapter.id);
-            if (chapterRows.length === 0) return null;
-            const launchingEmpty = chapter.status === "Launching" && chapterRows.every((row) => row.roster.length === 0);
-            return (
-              <section key={chapter.id} className="mb-7">
-                <div className="mb-3 flex items-center gap-2">
-                  <h2 className="font-display text-sm font-semibold uppercase tracking-[0.12em] text-white/60">{chapter.name}</h2>
-                  {chapter.status === "Launching" && <Badge label="Planning" />}
-                  {launchingEmpty && <span className="text-[11px] text-white/35">No active roster yet</span>}
-                </div>
-                <div className="grid gap-3 lg:grid-cols-2">
-                  {chapterRows.map((row) => {
+          {currentChapter?.status === "Launching" && (
+            <div className="mb-3 flex items-center gap-2">
+              <Badge label="Planning" />
+              {visible.every((row) => row.roster.length === 0) && (
+                <span className="text-[11px] text-white/35">No active roster yet</span>
+              )}
+            </div>
+          )}
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            {visible.map((row) => {
                     const division = getPodDivision(row.pod.name);
                     const meta = POD_DIVISION_META[division];
                     const primaryAlert = row.attendanceDue
@@ -151,10 +153,7 @@ export default function PodsPage() {
                       </Link>
                     );
                   })}
-                </div>
-              </section>
-            );
-          })}
+          </div>
         </>
       )}
     </MembersLayout>

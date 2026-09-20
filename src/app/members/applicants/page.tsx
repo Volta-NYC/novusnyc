@@ -16,6 +16,7 @@ import {
 } from "@/lib/members/storage";
 import { ACCEPTANCE_PLACEMENTS } from "@/lib/members/acceptancePlacements";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope } from "@/lib/members/chapterScope";
 import { gradeToClassOf } from "@/lib/grades";
 import { DEFAULT_MEMBER_ROLE } from "@/lib/members/roles";
 
@@ -136,6 +137,8 @@ export default function ApplicantsPage() {
   const [acceptSettingsMsg, setAcceptSettingsMsg] = useState("");
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
+  const scope = useChapterScope();
+  const homeChapterName = scope.chapters[0]?.name ?? "New York";
   const canEdit = authRole === "owner";
   const canDelete = authRole === "owner";
   const canManageStatus = authRole === "owner";
@@ -196,6 +199,10 @@ export default function ApplicantsPage() {
     const q = normalize(search);
     const base = [...applications]
       .filter((app) => {
+        // The applicant's chapter is free text on the form. An empty one is a
+        // New York application, which is how every pre-chapters row reads.
+        const appChapter = (app.chapter ?? "").trim() || homeChapterName;
+        if (normalize(appChapter) !== normalize(scope.name)) return false;
         if (!showAcceptedApplicants && normalize(app.status) === "accepted") return false;
         if (!q) return true;
         return normalize(app.fullName).includes(q)
@@ -206,7 +213,7 @@ export default function ApplicantsPage() {
     // Always sort by most recent application first
     base.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return base;
-  }, [applications, search, showAcceptedApplicants]);
+  }, [applications, search, showAcceptedApplicants, scope.name, homeChapterName]);
 
   const totalApplicantsCount = applications.length;
   const acceptedApplicantsCount = applications.filter((app) => normalize(app.status) === "accepted").length;
