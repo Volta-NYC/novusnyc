@@ -92,11 +92,14 @@ export async function POST(req: NextRequest) {
   if (placement) {
     const { data: settings } = await sb
       .from("site_settings")
-      .select("acceptance_whatsapp_link, acceptance_cc_email")
+      .select("acceptance_whatsapp_links, acceptance_cc_email")
       .eq("id", "singleton")
       .maybeSingle();
 
-    const whatsappLink = String(settings?.acceptance_whatsapp_link ?? "").trim();
+    // Each Marketing pod runs its own group, so the link is looked up by
+    // placement rather than shared.
+    const whatsappLinks = (settings?.acceptance_whatsapp_links ?? {}) as Record<string, unknown>;
+    const whatsappLink = String(whatsappLinks[placement.id] ?? "").trim();
     if (placement.needsWhatsapp && !whatsappLink) {
       return NextResponse.json({ error: "whatsapp_link_missing" }, { status: 400 });
     }

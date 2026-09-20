@@ -1170,7 +1170,7 @@ export interface SiteSettings {
   infractionThresholds:     { notice: number; warning: number; review: number };
   handbookAckRequiredAt:    string | null;
   publicStatOverrides:      Record<string, string>;
-  acceptanceWhatsappLink:   string;
+  acceptanceWhatsappLinks:  Record<string, string>;
   acceptanceCcEmail:        string;
 }
 
@@ -1196,7 +1196,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   infractionThresholds:  { notice: 3, warning: 6, review: 10 },
   handbookAckRequiredAt: null,
   publicStatOverrides:    {},
-  acceptanceWhatsappLink: "",
+  acceptanceWhatsappLinks: {},
   acceptanceCcEmail:      "",
 };
 
@@ -1234,7 +1234,9 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
     publicStatOverrides: typeof r.public_stat_overrides === "object" && r.public_stat_overrides !== null && !Array.isArray(r.public_stat_overrides)
       ? Object.fromEntries(Object.entries(r.public_stat_overrides as Record<string, unknown>).map(([key, value]) => [key, String(value ?? "")]))
       : {},
-    acceptanceWhatsappLink: String(r.acceptance_whatsapp_link ?? ""),
+    acceptanceWhatsappLinks: typeof r.acceptance_whatsapp_links === "object" && r.acceptance_whatsapp_links !== null && !Array.isArray(r.acceptance_whatsapp_links)
+      ? Object.fromEntries(Object.entries(r.acceptance_whatsapp_links as Record<string, unknown>).map(([key, value]) => [key, String(value ?? "")]))
+      : {},
     acceptanceCcEmail:      String(r.acceptance_cc_email ?? ""),
   };
 }
@@ -1284,7 +1286,7 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.infractionThresholds  !== undefined) row.infraction_thresholds   = patch.infractionThresholds;
   if (patch.handbookAckRequiredAt !== undefined) row.handbook_ack_required_at = patch.handbookAckRequiredAt;
   if (patch.publicStatOverrides      !== undefined) row.public_stat_overrides      = patch.publicStatOverrides;
-  if (patch.acceptanceWhatsappLink   !== undefined) row.acceptance_whatsapp_link   = patch.acceptanceWhatsappLink;
+  if (patch.acceptanceWhatsappLinks  !== undefined) row.acceptance_whatsapp_links  = patch.acceptanceWhatsappLinks;
   if (patch.acceptanceCcEmail        !== undefined) row.acceptance_cc_email        = patch.acceptanceCcEmail;
   const { data, error } = await supabase.from("site_settings").update(row).eq("id", "singleton").select("id").maybeSingle();
   if (error) throw new Error(error.message);

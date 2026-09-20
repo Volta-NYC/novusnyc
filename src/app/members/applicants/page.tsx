@@ -131,7 +131,7 @@ export default function ApplicantsPage() {
   const [acceptPlacement, setAcceptPlacement] = useState("");
   // Acceptance email settings live here rather than in the admin screen: they
   // are edited by whoever is sending acceptances, on the screen they send from.
-  const [waLink, setWaLink] = useState("");
+  const [waLinks, setWaLinks] = useState<Record<string, string>>({});
   const [ccEmail, setCcEmail] = useState("");
   const [savingAcceptSettings, setSavingAcceptSettings] = useState(false);
   const [acceptSettingsMsg, setAcceptSettingsMsg] = useState("");
@@ -173,7 +173,7 @@ export default function ApplicantsPage() {
   }, [fetchApplicantsData, canView]);
 
   useEffect(() => subscribeSiteSettings((s) => {
-    setWaLink(s.acceptanceWhatsappLink);
+    setWaLinks(s.acceptanceWhatsappLinks);
     setCcEmail(s.acceptanceCcEmail);
   }), []);
 
@@ -181,7 +181,10 @@ export default function ApplicantsPage() {
     setSavingAcceptSettings(true);
     setAcceptSettingsMsg("");
     try {
-      await updateSiteSettings({ acceptanceWhatsappLink: waLink.trim(), acceptanceCcEmail: ccEmail.trim() });
+      const trimmed = Object.fromEntries(
+        Object.entries(waLinks).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value),
+      );
+      await updateSiteSettings({ acceptanceWhatsappLinks: trimmed, acceptanceCcEmail: ccEmail.trim() });
       setAcceptSettingsMsg("Saved.");
     } catch (err) {
       setAcceptSettingsMsg(err instanceof Error ? err.message : "Could not save.");
@@ -285,8 +288,9 @@ export default function ApplicantsPage() {
       if (!emailRes.ok) {
         const { error } = await emailRes.json().catch(() => ({})) as { error?: string };
         // The member exists either way; say so rather than implying a rollback.
+        const placementLabel = ACCEPTANCE_PLACEMENTS.find((p) => p.id === placementId)?.label ?? "that team";
         throw new Error(error === "whatsapp_link_missing"
-          ? `${app.fullName} was added, but no acceptance email went out: set the WhatsApp group link first.`
+          ? `${app.fullName} was added, but no acceptance email went out: set the ${placementLabel} WhatsApp link first.`
           : `${app.fullName} was added, but the acceptance email didn't send.`);
       }
     }
@@ -496,16 +500,18 @@ export default function ApplicantsPage() {
             {acceptSettingsMsg && <span className="text-[10px] text-white/45">{acceptSettingsMsg}</span>}
           </div>
           <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[240px] flex-1">
-              <Field label="WhatsApp group link">
-                <Input
-                  value={waLink}
-                  onChange={(e) => setWaLink(e.target.value)}
-                  placeholder="https://chat.whatsapp.com/..."
-                />
-              </Field>
-            </div>
-            <div className="min-w-[240px] flex-1">
+            {ACCEPTANCE_PLACEMENTS.filter((p) => p.needsWhatsapp).map((p) => (
+              <div key={p.id} className="min-w-[230px] flex-1">
+                <Field label={`${p.label} — WhatsApp`}>
+                  <Input
+                    value={waLinks[p.id] ?? ""}
+                    onChange={(e) => setWaLinks((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                    placeholder="https://chat.whatsapp.com/..."
+                  />
+                </Field>
+              </div>
+            ))}
+            <div className="min-w-[230px] flex-1">
               <Field label="CC on Marketing acceptances">
                 <Input
                   value={ccEmail}
