@@ -141,7 +141,7 @@ export const partnerships: Partnership[] = [
   {
     id: "brooklyn-chamber",
     name: "Brooklyn Chamber of Commerce",
-    shortName: "Brooklyn Chamber",
+    shortName: "Brooklyn Chamber of Commerce",
     kind: "chamber",
     sector: "Brooklyn",
     depth: "deep",
@@ -188,6 +188,7 @@ export const partnerships: Partnership[] = [
     roles: ["field-outreach"],
     summary:
       "The Cypress Hills Fulton BID has covered Fulton Street in Cypress Hills since it was created in 2024. It walked the corridor with the team in March 2026 to meet merchants, and met with Novus that April about Google Business Profiles and social media for the businesses along it.",
+    introducedBy: [{ from: "chldc" }],
   },
   {
     id: "atlantic-avenue-bid",
@@ -231,6 +232,7 @@ export const partnerships: Partnership[] = [
       "The Staten Island Business Outreach Center is the business-support arm of the West Brighton Community Local Development Corporation. Novus designed and built its website, inquiry form included, and SIBOC shares the team with merchants across Staten Island.",
     facts: ["Shared Novus's flyer with local merchants in February 2026."],
     businesses: [{ name: "siboc.org", status: "live", url: "https://siboc.org" }],
+    introducedBy: [{ from: "forest-avenue-bid" }],
   },
   {
     id: "sunnyside-shines",
@@ -287,7 +289,13 @@ export const partnerships: Partnership[] = [
     summary:
       "The NYC Small Business Resource Network connects business owners with support in all five boroughs through specialists based at the borough chambers. Novus presented to specialists from every borough in June 2026, and they now introduce owners who need a website and coordinate the follow-up with the team.",
     facts: ["Lists Novus as a website resource in its referral system."],
-    introducedBy: [{ from: "queens-chamber" }],
+    introducedBy: [
+      { from: "brooklyn-chamber" },
+      { from: "bronx-chamber" },
+      { from: "queens-chamber" },
+      { from: "manhattan-chamber" },
+      { from: "si-chamber" },
+    ],
   },
   {
     id: "nyc-sbs",
@@ -304,7 +312,7 @@ export const partnerships: Partnership[] = [
   {
     id: "bronx-chamber",
     name: "Bronx Chamber of Commerce",
-    shortName: "Bronx Chamber",
+    shortName: "Bronx Chamber of Commerce",
     kind: "chamber",
     sector: "Bronx",
     depth: "active",
@@ -329,7 +337,7 @@ export const partnerships: Partnership[] = [
   {
     id: "queens-chamber",
     name: "Queens Chamber of Commerce",
-    shortName: "Queens Chamber",
+    shortName: "Queens Chamber of Commerce",
     kind: "chamber",
     sector: "Queens",
     depth: "active",
@@ -341,7 +349,7 @@ export const partnerships: Partnership[] = [
   {
     id: "manhattan-chamber",
     name: "Manhattan Chamber of Commerce",
-    shortName: "Manhattan Chamber",
+    shortName: "Manhattan Chamber of Commerce",
     kind: "chamber",
     sector: "Manhattan",
     depth: "active",
@@ -353,7 +361,7 @@ export const partnerships: Partnership[] = [
   {
     id: "si-chamber",
     name: "Staten Island Chamber of Commerce",
-    shortName: "Staten Island Chamber",
+    shortName: "Staten Island Chamber of Commerce",
     kind: "chamber",
     sector: "Staten Island",
     depth: "active",
@@ -386,6 +394,7 @@ export const partnerships: Partnership[] = [
     summary:
       "The East New York Merchants Association invited Novus to its \"Let's Fill These Storefronts!\" event in May 2026, where the team met local owners. Rell's Cafe Corner is one of the projects that came out of it.",
     businesses: [{ name: "Rell's Cafe Corner", status: "in-progress" }],
+    introducedBy: [{ from: "chldc" }],
   },
   {
     id: "north-flatbush-bid",
@@ -452,6 +461,17 @@ export const partnerships: Partnership[] = [
       "The Long Island City Partnership met with Novus in July 2026 and shares the team with local businesses that need help with their websites.",
   },
   {
+    id: "lower-east-side-partnership",
+    name: "Lower East Side Partnership",
+    shortName: "Lower East Side Partnership",
+    kind: "bid",
+    sector: "Manhattan",
+    depth: "active",
+    roles: ["shares-resource"],
+    summary:
+      "The Lower East Side Partnership connects Novus with small businesses in the Lower East Side.",
+  },
+  {
     // Pending founder open question 4: the redesign was for a staff member's
     // company, not an RDRC-referred merchant.
     id: "rdrc",
@@ -468,4 +488,16 @@ export const partnerships: Partnership[] = [
   },
 ];
 
-export const visiblePartnerships = partnerships.filter((partner) => !partner.hidden);
+const NYC_SBS_ID = "nyc-sbs";
+
+// NYC SBS connects Novus with each organization shown on the public map.
+// Keep each partner's specific introductions above, then add the citywide
+// connection consistently here.
+export const visiblePartnerships = partnerships
+  .filter((partner) => !partner.hidden)
+  .map((partner) => {
+    if (partner.id === NYC_SBS_ID) return partner;
+    const introducedBy = partner.introducedBy ?? [];
+    if (introducedBy.some((introduction) => introduction.from === NYC_SBS_ID)) return partner;
+    return { ...partner, introducedBy: [...introducedBy, { from: NYC_SBS_ID }] };
+  });

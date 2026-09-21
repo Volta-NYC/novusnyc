@@ -45,7 +45,7 @@ const RING_POSITION = [
   "bay-ridge-bid", "atlantic-avenue-bid", "park-slope-bid", "north-flatbush-bid", "brooklyn-chamber",
   "chldc", "cypress-hills-fulton-bid", "enyma", "ldceny",
   "si-chamber", "forest-avenue-bid", "siboc", "camo",
-  "aaf", "manhattan-chamber", "nyc-sbs", "sbrn",
+  "aaf", "lower-east-side-partnership", "manhattan-chamber", "nyc-sbs", "sbrn",
 ];
 
 export interface LayoutInput {
