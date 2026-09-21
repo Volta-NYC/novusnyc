@@ -277,6 +277,8 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
           })}
         </g>
 
+        <MapFlowDots nodes={layout.nodes} drawn={drawn} reduced={reduced} focusedId={focusedId} />
+
         <g aria-hidden="true" className={`pointer-events-none ${fade}`} style={{ opacity: nodeOpacity("novus") }}>
           <circle cx={CENTER.x} cy={CENTER.y} r={NOVUS_RADIUS + 8} fill="none" stroke={PEACH} strokeOpacity={0.22} strokeWidth={1} />
           <circle cx={CENTER.x} cy={CENTER.y} r={NOVUS_RADIUS} fill="rgb(var(--color-dark))" stroke={PEACH} strokeOpacity={0.85} strokeWidth={2} />
@@ -421,6 +423,77 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
         <PartnerSheet partner={byId.get(sheetId) as PublicPartnership} partnersById={byId} onClose={closeSheet} />
       )}
     </div>
+  );
+}
+
+// The globe uses a few travelling pulses to show movement through the network.
+// Keeping this to eight dots and advancing them from one requestAnimationFrame
+// loop preserves that cue without asking the browser to animate every spoke.
+function MapFlowDots({
+  nodes,
+  drawn,
+  reduced,
+  focusedId,
+}: {
+  nodes: NodeLayout[];
+  drawn: boolean;
+  reduced: boolean;
+  focusedId: string | null;
+}) {
+  const dotRefs = useRef<Array<SVGCircleElement | null>>([]);
+  const routes = useMemo(() => {
+    const candidates = focusedId ? nodes.filter((node) => node.id === focusedId) : nodes;
+    const stride = Math.max(1, Math.ceil(candidates.length / 8));
+    return candidates.filter((_, index) => index % stride === 0).slice(0, 8);
+  }, [focusedId, nodes]);
+
+  useEffect(() => {
+    if (!drawn || reduced || routes.length === 0) return;
+    let frame = 0;
+    let running = !document.hidden;
+    const duration = 5600;
+
+    const draw = (now: number) => {
+      if (!running) return;
+      routes.forEach((node, index) => {
+        const dot = dotRefs.current[index];
+        if (!dot) return;
+        const progress = ((now + index * (duration / routes.length)) % duration) / duration;
+        const dx = node.x - CENTER.x;
+        const dy = node.y - CENTER.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        const start = NOVUS_RADIUS + 8;
+        const end = distance - node.r - 4;
+        const traveled = start + (end - start) * progress;
+        const x = CENTER.x + (dx / distance) * traveled;
+        const y = CENTER.y + (dy / distance) * traveled;
+        dot.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+        dot.setAttribute("opacity", `${Math.sin(Math.PI * progress).toFixed(2)}`);
+      });
+      frame = requestAnimationFrame(draw);
+    };
+
+    const onVisibilityChange = () => {
+      running = !document.hidden;
+      if (running) frame = requestAnimationFrame(draw);
+      else cancelAnimationFrame(frame);
+    };
+
+    frame = requestAnimationFrame(draw);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      running = false;
+      cancelAnimationFrame(frame);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [drawn, reduced, routes]);
+
+  return (
+    <g aria-hidden="true" className="pointer-events-none">
+      {routes.map((node, index) => (
+        <circle key={node.id} ref={(element) => { dotRefs.current[index] = element; }} r={2.6} fill={PEACH} opacity={0} />
+      ))}
+    </g>
   );
 }
 
