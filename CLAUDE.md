@@ -250,6 +250,23 @@ One Gmail account sends for all four addresses — `src/lib/server/smtp.ts` has 
 single credential pair by design. Do not reintroduce per-address SMTP
 credentials; aliases are what make one account sufficient.
 
+### Email wording lives only in the database
+
+Every email the backend sends is rendered from its `email_templates` row by
+`renderEmail` / `renderAutomationEmail` in `src/lib/server/templateRenderer.ts`.
+There is **no wording in code**: no fallback HTML, no hand-written text part,
+no hard-coded subject. The plain-text part is derived from the rendered HTML.
+A missing or switched-off template means the email is not sent and the caller
+returns a reason (`email_not_set_up` / `email_off`). Never add a fallback: it is
+copy the Emails page cannot show, and it sends exactly when the template is gone.
+
+`src/lib/members/systemEmails.ts` lists every email the code sends: trigger,
+the `{{variables}}` the code fills in, and its switch (`automation`,
+`template`, or `none` for password reset, invite and setup link, which must
+never be switchable off). The Emails page is built from that list, so **a new
+send path needs a registry entry**. Keep each entry's `variables` equal to what
+the code passes; an unknown `{{token}}` renders as an empty string, silently.
+
 `voltanyc.org` still routes to the same inbox and is deliberately kept alive:
 partners, BIDs and applicants from before the rebrand hold those addresses. Do
 not delete that zone or its routing rules.

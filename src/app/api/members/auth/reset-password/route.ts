@@ -1,22 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
-import {
-  createTransportForFrom,
-  getDefaultFromAddress,
-  resolveFromWithName,
-  getDefaultReplyToAddress,
-} from "@/lib/server/smtp";
-import { loadEmailTemplate } from "@/lib/server/emailTemplates";
+import { createTransportForFrom, getDefaultFromAddress } from "@/lib/server/smtp";
+import { renderEmail } from "@/lib/server/templateRenderer";
 
 export const runtime = "nodejs";
-
-const DEFAULT_SUBJECT = "Reset your Novus NYC password";
-const DEFAULT_HTML = `<p>Hi {{firstName}},</p>
-<p>We received a request to reset the password for your Novus NYC member portal account. Use the link below to choose a new one.</p>
-<p><a href="{{link}}">Reset your password</a></p>
-<p>This link expires in 1 hour and can only be used once. If you didn't request a password reset, you can ignore this email.</p>
-<p>Best,<br>Ethan<br>Novus NYC</p>`;
 
 function siteOrigin(req: NextRequest): string {
   const host = req.headers.get("host") ?? "www.novusnyc.org";
@@ -35,6 +23,12 @@ export async function POST(req: NextRequest) {
 
   const emailCheck = await consumeRateLimit({ bucket: "reset-password-email", key: email, limit: 3, windowSec: 3600 });
   if (!emailCheck.ok) return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
+
+  // Checked before any lookup so a missing template fails the same way for every
+  // address. Failing only after the member lookup would reveal which emails are
+  // members, which the silent success below exists to hide.
+  const ready = await renderEmail("password-reset", {}, { useTemplateSwitch: false });
+  if (!ready.ok) return NextResponse.json({ error: "email_not_set_up" }, { status: 500 });
 
   const sb = getSupabaseAdmin();
   const redirectTo = `${siteOrigin(req)}/members/reset-password`;
@@ -62,24 +56,11 @@ export async function POST(req: NextRequest) {
   const name = String((rows?.[0] as Record<string, unknown> | undefined)?.name ?? "") || email;
   const firstName = name.split(" ")[0] || name;
 
-  const { subject, html } = await loadEmailTemplate(
-    "password-reset",
-    { name, firstName, link },
-    { subject: DEFAULT_SUBJECT, html: DEFAULT_HTML },
-  );
+  const rendered = await renderEmail("password-reset", { name, firstName, link }, { useTemplateSwitch: false });
+  if (!rendered.ok) return NextResponse.json({ error: "email_not_set_up" }, { status: 500 });
 
-  const text = `Hi ${firstName},\n\nClick the link below to reset your Novus NYC member portal password:\n${link}\n\nThis link expires in 1 hour. If you didn't request a reset, ignore this email.\n\nBest,\nEthan\nNovus NYC`;
-
-  const from = getDefaultFromAddress();
-  const { transporter } = createTransportForFrom(from);
-  await transporter.sendMail({
-    from: resolveFromWithName(from),
-    replyTo: getDefaultReplyToAddress(from),
-    to: email,
-    subject,
-    text,
-    html,
-  });
+  const { transporter } = createTransportForFrom(getDefaultFromAddress());
+  await transporter.sendMail({ to: email, ...rendered.email });
 
   return NextResponse.json({ success: true });
 }

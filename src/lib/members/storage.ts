@@ -275,30 +275,11 @@ export interface Infraction {
 // Admin-editable copy for every automated email. Hardcoding is intentionally
 // avoided — admins control wording without a deploy.
 
-// Stable keys referenced by automation. Custom (admin-authored) templates use
-// arbitrary strings — typically `custom_<id>` — and never collide with these.
-export type SystemEmailTemplateKey =
-  | "applicant_accepted"
-  | "interview_confirmation"
-  | "interview_rescheduled"
-  | "interviewer_booking_notify"
-  | "interviewer_reschedule_notify"
-  | "pod_meeting_reminder"
-  | "pod_attendance_missing"
-  | "pod_task_due_soon"
-  | "project_draft_ready"
-  | "infraction_issued"
-  | "service_hours_summary"
-  | "invite"
-  | "setup-link"
-  | "password-reset";
-
-// Aliased for back-compat with earlier callers — same shape, just any string allowed.
-export type EmailTemplateKey = SystemEmailTemplateKey | (string & {});
+// Which keys the code sends, and when, is listed in src/lib/members/systemEmails.ts.
 
 export interface EmailTemplate {
   id: string;
-  key: string;                     // SystemEmailTemplateKey for system; arbitrary for custom
+  key: string;                     // a SYSTEM_EMAILS key, or custom_<id> for hand-written ones
   label: string;                   // human-readable name (admin-editable for custom)
   description: string;             // when this template fires (or what it's for)
   subject: string;                 // mustache-style {{variable}} tokens supported
@@ -1169,6 +1150,7 @@ export interface SiteSettings {
   handbookAckRequiredAt:    string | null;
   publicStatOverrides:      Record<string, string>;
   acceptanceWhatsappLinks:  Record<string, string>;
+  acceptanceBookingLink:    string;
   acceptanceCcEmail:        string;
 }
 
@@ -1195,6 +1177,7 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   handbookAckRequiredAt: null,
   publicStatOverrides:    {},
   acceptanceWhatsappLinks: {},
+  acceptanceBookingLink:   "",
   acceptanceCcEmail:      "",
 };
 
@@ -1236,6 +1219,7 @@ function siteSettingsFromRow(r: Record<string, unknown>): SiteSettings {
       ? Object.fromEntries(Object.entries(r.acceptance_whatsapp_links as Record<string, unknown>).map(([key, value]) => [key, String(value ?? "")]))
       : {},
     acceptanceCcEmail:      String(r.acceptance_cc_email ?? ""),
+    acceptanceBookingLink:  String(r.acceptance_booking_link ?? ""),
   };
 }
 
@@ -1286,6 +1270,7 @@ export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<
   if (patch.publicStatOverrides      !== undefined) row.public_stat_overrides      = patch.publicStatOverrides;
   if (patch.acceptanceWhatsappLinks  !== undefined) row.acceptance_whatsapp_links  = patch.acceptanceWhatsappLinks;
   if (patch.acceptanceCcEmail        !== undefined) row.acceptance_cc_email        = patch.acceptanceCcEmail;
+  if (patch.acceptanceBookingLink    !== undefined) row.acceptance_booking_link    = patch.acceptanceBookingLink;
   const { data, error } = await supabase.from("site_settings").update(row).eq("id", "singleton").select("id").maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Site settings were not updated. Confirm that this account has admin access.");
@@ -1364,12 +1349,6 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
 }
 
 // ── Automation configs ────────────────────────────────────────────────────────
-
-export async function deleteAutomationConfig(automationId: string): Promise<void> {
-  const { error } = await supabase.from("automation_configs").delete().eq("automation_id", automationId);
-  if (error) throw new Error(error.message);
-  await writeAuditLog({ action: "delete", collection: "automationConfigs", recordId: automationId });
-}
 
 export async function updateAutomationConfig(automationId: string, patch: {
   templateKey?: string | null;

@@ -144,11 +144,21 @@ export function createTransportForFrom(fromAddress?: string) {
 }
 
 /** A readable plain-text part. A missing one reads as spam to most filters. */
+// The one HTML-to-text conversion for outgoing mail. The text part is what
+// spam filters and text-only clients read, so it has to carry every link the
+// HTML does.
 export function htmlToText(html: string): string {
   return html
     .replace(/<style[\s\S]*?<\/style>/gi, "")
+    // Anchor text carries the meaning, the href the destination. Dropping the
+    // tag alone keeps "the member portal" and loses the URL.
+    .replace(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href: string, label: string) => {
+      const text = label.replace(/<[^>]+>/g, "").trim();
+      return text && text !== href ? `${text} (${href})` : href;
+    })
     .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|tr|h[1-6]|li)>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6])>/gi, "\n\n")
+    .replace(/<\/(tr|li)>/gi, "\n")
     .replace(/<li[^>]*>/gi, "- ")
     .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/g, " ")
@@ -157,8 +167,8 @@ export function htmlToText(html: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&#39;|&apos;/g, "'")
     .replace(/&quot;/g, '"')
-    .replace(/\n{3,}/g, "\n\n")
     .split("\n").map((line) => line.trim()).join("\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 

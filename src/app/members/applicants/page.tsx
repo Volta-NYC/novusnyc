@@ -135,10 +135,12 @@ export default function ApplicantsPage() {
   const [acceptModalApp, setAcceptModalApp] = useState<ApplicationRecord | null>(null);
   const [acceptSendEmail, setAcceptSendEmail] = useState(true);
   const [acceptPlacement, setAcceptPlacement] = useState("");
+  const [acceptInterview, setAcceptInterview] = useState(false);
   // Acceptance email settings live here rather than in the admin screen: they
   // are edited by whoever is sending acceptances, on the screen they send from.
   const [waLinks, setWaLinks] = useState<Record<string, string>>({});
   const [ccEmail, setCcEmail] = useState("");
+  const [bookingLink, setBookingLink] = useState("");
   const [savingAcceptSettings, setSavingAcceptSettings] = useState(false);
   const [acceptSettingsMsg, setAcceptSettingsMsg] = useState("");
   const { ask, Dialog } = useConfirm();
@@ -184,6 +186,7 @@ export default function ApplicantsPage() {
   useEffect(() => subscribeSiteSettings((s) => {
     setWaLinks(s.acceptanceWhatsappLinks);
     setCcEmail(s.acceptanceCcEmail);
+    setBookingLink(s.acceptanceBookingLink);
   }), []);
 
   const saveAcceptSettings = async () => {
@@ -193,7 +196,11 @@ export default function ApplicantsPage() {
       const trimmed = Object.fromEntries(
         Object.entries(waLinks).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value),
       );
-      await updateSiteSettings({ acceptanceWhatsappLinks: trimmed, acceptanceCcEmail: ccEmail.trim() });
+      await updateSiteSettings({
+        acceptanceWhatsappLinks: trimmed,
+        acceptanceCcEmail: ccEmail.trim(),
+        acceptanceBookingLink: bookingLink.trim(),
+      });
       setAcceptSettingsMsg("Saved.");
     } catch (err) {
       setAcceptSettingsMsg(err instanceof Error ? err.message : "Could not save.");
@@ -271,7 +278,7 @@ export default function ApplicantsPage() {
     }
   };
 
-  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, placementId = "") => {
+  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, placementId = "", interview = false) => {
     if (!user) throw new Error("not_authenticated");
     const token = await getAuthToken();
     // The Accepted stamp is applied by the promote endpoint once the member row
@@ -313,14 +320,23 @@ export default function ApplicantsPage() {
           applicantEmail: app.email,
           decision: "Accepted",
           placementId,
+          interview,
         }),
       });
       if (!emailRes.ok) {
         const { error } = await emailRes.json().catch(() => ({})) as { error?: string };
         // The member exists either way; say so rather than implying a rollback.
         const placementLabel = ACCEPTANCE_PLACEMENTS.find((p) => p.id === placementId)?.label ?? "that team";
-        throw new Error(error === "whatsapp_link_missing"
-          ? `${app.fullName} was added, but no acceptance email went out: set the ${placementLabel} WhatsApp link first.`
+        const why: Record<string, string> = {
+          whatsapp_link_missing: `set the ${placementLabel} WhatsApp link first`,
+          booking_link_missing: "set the interview booking link first",
+          email_off: "that email is switched off on the Emails page",
+          email_not_set_up: "that email is not set up on the Emails page",
+          interview_needs_team: "an interview email needs a team",
+        };
+        const reason = error ? why[error] : undefined;
+        throw new Error(reason
+          ? `${app.fullName} was added, but no acceptance email went out: ${reason}.`
           : `${app.fullName} was added, but the acceptance email didn't send.`);
       }
     }
@@ -331,13 +347,14 @@ export default function ApplicantsPage() {
     if (!acceptModalApp) return;
     setBulkPromoting(true);
     try {
-      const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptPlacement);
+      const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptPlacement, acceptInterview);
       setStatusMessage(action === "created"
         ? `Accepted ${acceptModalApp.fullName} and added them to the member directory.`
         : `Accepted ${acceptModalApp.fullName}. They were already in the directory, so their record was updated.`);
       await fetchApplicantsData();
       setAcceptModalApp(null);
       setAcceptPlacement("");
+      setAcceptInterview(false);
     } catch (err) {
       setStatusMessage(err instanceof Error ? err.message : `Could not accept ${acceptModalApp.fullName}.`);
     } finally {
@@ -460,6 +477,7 @@ export default function ApplicantsPage() {
           if (bulkPromoting) return;
           setAcceptModalApp(null);
           setAcceptPlacement("");
+          setAcceptInterview(false);
         }}
         title="Accept Applicant"
       >
@@ -470,7 +488,10 @@ export default function ApplicantsPage() {
           <Field label="Placement">
             <Select
               value={acceptPlacement}
-              onChange={(e) => setAcceptPlacement(e.target.value)}
+              onChange={(e) => {
+                setAcceptPlacement(e.target.value);
+                if (!e.target.value) setAcceptInterview(false);
+              }}
             >
               <option value="">General acceptance (no team)</option>
               {ACCEPTANCE_PLACEMENTS.map((p) => (
@@ -486,6 +507,18 @@ export default function ApplicantsPage() {
               className="members-checkbox"
             />
             Send acceptance email
+          </label>
+          {/* The interview emails are team welcomes plus a booking link, so there
+              is nothing to send without a team or with email off. */}
+          <label className={`flex items-center gap-2 text-sm ${acceptPlacement && acceptSendEmail ? "text-white/65" : "text-white/30"}`}>
+            <input
+              type="checkbox"
+              checked={acceptInterview && Boolean(acceptPlacement) && acceptSendEmail}
+              disabled={!acceptPlacement || !acceptSendEmail}
+              onChange={(e) => setAcceptInterview(e.target.checked)}
+              className="members-checkbox"
+            />
+            Interview?
           </label>
         </div>
         <div className="flex justify-end gap-2 mt-5">
@@ -538,6 +571,15 @@ export default function ApplicantsPage() {
                 </Field>
               </div>
             ))}
+            <div className="min-w-[230px] flex-1">
+              <Field label="Interview booking page">
+                <Input
+                  value={bookingLink}
+                  onChange={(e) => setBookingLink(e.target.value)}
+                  placeholder="https://calendar.app.google/..."
+                />
+              </Field>
+            </div>
             <div className="min-w-[230px] flex-1">
               <Field label="CC on Marketing acceptances">
                 <Input

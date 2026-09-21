@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyCaller } from "@/lib/server/adminApi";
 import { getSupabaseAdmin, writeAuditLog } from "@/lib/supabaseAdmin";
-import {
-  createTransportForFrom,
-  getDefaultFromAddress,
-  resolveFromWithName,
-  getDefaultReplyToAddress,
-} from "@/lib/server/smtp";
-import { loadEmailTemplate } from "@/lib/server/emailTemplates";
+import { createTransportForFrom, getDefaultFromAddress } from "@/lib/server/smtp";
+import { renderEmail } from "@/lib/server/templateRenderer";
 
 export const runtime = "nodejs";
 
@@ -16,13 +11,6 @@ function siteOrigin(req: NextRequest): string {
   const proto = req.headers.get("x-forwarded-proto") ?? "https";
   return `${proto}://${host}`;
 }
-
-const DEFAULT_INVITE_SUBJECT = "Set up your Novus NYC member portal account";
-const DEFAULT_INVITE_HTML = `<p>Hi {{firstName}},</p>
-<p>You've been invited to join the Novus NYC member portal.</p>
-<p><a href="{{link}}">Set up your account</a></p>
-<p>If you didn't expect this email, you can ignore it.</p>
-<p>Best,<br>Ethan<br>Novus NYC</p>`;
 
 export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner"]);
@@ -49,28 +37,16 @@ export async function POST(req: NextRequest) {
   // Permanent landing link — never expires.
   const link = `${siteOrigin(req)}/members/signup?email=${encodeURIComponent(email)}`;
 
-  const { subject, html } = await loadEmailTemplate(
-    "invite",
-    { name, firstName, link },
-    { subject: DEFAULT_INVITE_SUBJECT, html: DEFAULT_INVITE_HTML }
-  );
-
-  const text = `Hi ${firstName},\n\nYou've been invited to set up your account on the Novus NYC member portal.\n\n${link}\n\nIf you didn't expect this email, you can safely ignore it.\n\nBest,\nEthan\nNovus NYC`;
+  const rendered = await renderEmail("invite", { name, firstName, link }, { useTemplateSwitch: false });
+  if (!rendered.ok) return NextResponse.json({ error: "email_not_set_up" }, { status: 500 });
 
   try {
-    const from = getDefaultFromAddress();
-    const { transporter } = createTransportForFrom(from);
-    await transporter.sendMail({
-      from: resolveFromWithName(from),
-      replyTo: getDefaultReplyToAddress(from),
-      to: email,
-      subject,
-      text,
-      html,
-    });
+    const { transporter } = createTransportForFrom(getDefaultFromAddress());
+    await transporter.sendMail({ to: email, ...rendered.email });
   } catch (err) {
+    // Logged, not returned: a raw SMTP error names hosts and accounts.
     console.error("[invite-member] sendMail failed:", err);
-    return NextResponse.json({ error: "email_send_failed", detail: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "email_send_failed" }, { status: 500 });
   }
 
   await writeAuditLog({

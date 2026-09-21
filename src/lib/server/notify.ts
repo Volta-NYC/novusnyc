@@ -1,7 +1,7 @@
 import "server-only";
 
 import { renderAutomationEmail } from "@/lib/server/templateRenderer";
-import { createTransportForFrom, getDefaultFromAddress, htmlToText } from "@/lib/server/smtp";
+import { createTransportForFrom, getDefaultFromAddress } from "@/lib/server/smtp";
 import { SITE_URL } from "@/lib/site";
 
 export interface NotifyResult {
@@ -31,7 +31,10 @@ export async function sendAutomationEmail(
     ...variables,
     portalLink: `${SITE_URL}/members`,
   });
-  if (!rendered) return { sent: 0, skipped: to.length, reason: "automation_disabled" };
+  if (!rendered.ok) {
+    return { sent: 0, skipped: to.length, reason: rendered.reason === "off" ? "automation_disabled" : "template_missing" };
+  }
+  const { email } = rendered;
 
   const from = getDefaultFromAddress();
   const { transporter } = createTransportForFrom(from);
@@ -42,9 +45,9 @@ export async function sendAutomationEmail(
     try {
       await transporter.sendMail({
         to: address,
-        subject: rendered.subject,
-        text: htmlToText(rendered.html),
-        html: rendered.html,
+        subject: email.subject,
+        text: email.text,
+        html: email.html,
       });
       sent += 1;
     } catch {

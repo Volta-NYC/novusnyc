@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
-import {
-  createTransportForFrom,
-  getDefaultFromAddress,
-  resolveFromWithName,
-  getDefaultReplyToAddress,
-} from "@/lib/server/smtp";
-import { loadEmailTemplate } from "@/lib/server/emailTemplates";
+import { createTransportForFrom, getDefaultFromAddress } from "@/lib/server/smtp";
+import { renderEmail } from "@/lib/server/templateRenderer";
 
 export const runtime = "nodejs";
 
@@ -16,13 +11,6 @@ function siteOrigin(req: NextRequest): string {
   const proto = req.headers.get("x-forwarded-proto") ?? "https";
   return `${proto}://${host}`;
 }
-
-const DEFAULT_SETUP_SUBJECT = "Your Novus NYC portal setup link";
-const DEFAULT_SETUP_HTML = `<p>Hi {{firstName}},</p>
-<p>Here is your link to set up your Novus NYC member portal account:</p>
-<p><a href="{{link}}">Set up your account</a></p>
-<p>This link expires in 24 hours and can only be used once. If it expires, you can <a href="{{signupUrl}}">request a new one</a>. If you didn't request this, you can ignore it.</p>
-<p>Best,<br>Ethan<br>Novus NYC</p>`;
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);
@@ -39,6 +27,11 @@ export async function POST(req: NextRequest) {
   if (!emailCheck.ok) {
     return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
   }
+
+  // Checked before the member lookup so a missing template fails identically
+  // for every address and cannot reveal who is a member.
+  const ready = await renderEmail("setup-link", {}, { useTemplateSwitch: false });
+  if (!ready.ok) return NextResponse.json({ error: "email_not_set_up" }, { status: 500 });
 
   const sb = getSupabaseAdmin();
 
@@ -84,24 +77,11 @@ export async function POST(req: NextRequest) {
     }
     link = magicData.properties.action_link;
   }
-  const { subject, html } = await loadEmailTemplate(
-    "setup-link",
-    { name, firstName, link, signupUrl: redirectTo },
-    { subject: DEFAULT_SETUP_SUBJECT, html: DEFAULT_SETUP_HTML }
-  );
+  const rendered = await renderEmail("setup-link", { name, firstName, link, signupUrl: redirectTo }, { useTemplateSwitch: false });
+  if (!rendered.ok) return NextResponse.json({ error: "email_not_set_up" }, { status: 500 });
 
-  const text = `Hi ${firstName},\n\nHere is your link to set up your Novus NYC member portal account:\n${link}\n\nThis link expires in 24 hours and can only be used once.\nIf you didn't request this, you can safely ignore it.\n\nBest,\nEthan\nNovus NYC`;
-
-  const from = getDefaultFromAddress();
-  const { transporter } = createTransportForFrom(from);
-  await transporter.sendMail({
-    from: resolveFromWithName(from),
-    replyTo: getDefaultReplyToAddress(from),
-    to: email,
-    subject,
-    text,
-    html,
-  });
+  const { transporter } = createTransportForFrom(getDefaultFromAddress());
+  await transporter.sendMail({ to: email, ...rendered.email });
 
   return NextResponse.json({ success: true });
 }

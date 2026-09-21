@@ -16,6 +16,9 @@ export interface AcceptancePlacement {
   label: string;
   department: "Marketing" | "Tech";
   templateKey: string;
+  // Same welcome, plus a link to book an interview. Sent when "Interview?" is
+  // ticked on accept.
+  interviewTemplateKey: string;
   ccRole: AcceptanceCcRole;
   needsWhatsapp: boolean;
 }
@@ -26,6 +29,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     label: "Small Business Outreach",
     department: "Marketing",
     templateKey: "acceptance_outreach",
+    interviewTemplateKey: "acceptance_interview_outreach",
     ccRole: "coordinator",
     needsWhatsapp: true,
   },
@@ -34,6 +38,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     label: "Social Media & Branding",
     department: "Marketing",
     templateKey: "acceptance_social",
+    interviewTemplateKey: "acceptance_interview_social",
     ccRole: "coordinator",
     needsWhatsapp: true,
   },
@@ -42,6 +47,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     label: "Grants & Funding",
     department: "Marketing",
     templateKey: "acceptance_grants",
+    interviewTemplateKey: "acceptance_interview_grants",
     ccRole: "coordinator",
     needsWhatsapp: true,
   },
@@ -50,6 +56,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     label: "Novus Ambassadors",
     department: "Marketing",
     templateKey: "acceptance_ambassadors",
+    interviewTemplateKey: "acceptance_interview_ambassadors",
     ccRole: "coordinator",
     needsWhatsapp: true,
   },
@@ -58,6 +65,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     label: "Digital & Tech",
     department: "Tech",
     templateKey: "acceptance_tech",
+    interviewTemplateKey: "acceptance_interview_tech",
     ccRole: "tahmid",
     needsWhatsapp: false,
   },
