@@ -553,7 +553,7 @@ export default function ApplicantsPage() {
           </div>
         </div>
       )}
-      <SectionTabs tabs={APPLICANTS_GROUP_TABS} />
+      <SectionTabs tabs={APPLICANTS_GROUP_TABS.map((tab) => ({ ...tab, href: scope.scopedHref(tab.href) }))} />
 
       {statusMessage && <p className="text-xs text-white/55 mb-4">{statusMessage}</p>}
 

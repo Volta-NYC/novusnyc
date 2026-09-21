@@ -36,6 +36,7 @@ import {
   type PodAssignment,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope } from "@/lib/members/chapterScope";
 import { getPodDivision, POD_DIVISION_META } from "@/lib/members/constants";
 import AttendanceGrid from "./AttendanceGrid";
 import PodAssignments from "./PodAssignments";
@@ -54,6 +55,7 @@ type Tab =
   | "settings";
 
 export default function PodDetailPage() {
+  const scope = useChapterScope();
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? "";
   const { authRole, userProfile, loading } = useAuth();
@@ -194,7 +196,7 @@ export default function PodDetailPage() {
         <Empty
           message="No pod at that address."
           action={
-            <Link href="/members/pods" className="text-[#F3E28D] text-sm">
+            <Link href={scope.scopedHref("/members/pods")} className="text-[#F3E28D] text-sm">
               Back to pods
             </Link>
           }
@@ -212,7 +214,7 @@ export default function PodDetailPage() {
         <Empty
           message={`You're not in ${pod.name}.`}
           action={
-            <Link href="/members/pods" className="text-[#F3E28D] text-sm">
+            <Link href={scope.scopedHref("/members/pods")} className="text-[#F3E28D] text-sm">
               Back to your pods
             </Link>
           }
@@ -272,7 +274,7 @@ export default function PodDetailPage() {
     <MembersLayout>
       <div className="mb-1">
         <Link
-          href="/members/pods"
+          href={scope.scopedHref("/members/pods")}
           className="text-[11px] text-white/35 hover:text-white/70"
         >
           ← Pods

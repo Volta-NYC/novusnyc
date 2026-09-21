@@ -28,6 +28,12 @@ const ChapterScopeContext = createContext<ChapterScope | null>(null);
 
 const HOME_PREFIX = "/members";
 
+export function isChapterPage(href: string): boolean {
+  const path = href.split(/[?#]/)[0];
+  return ["/members/projects", "/members/team", "/members/orgs", "/members/applicants", "/members/pods"].includes(path)
+    || path.startsWith("/members/pods/");
+}
+
 function slugFromPath(pathname: string, chapters: Chapter[]): string | null {
   const segment = pathname.replace(/^\/members\/?/, "").split("/")[0] ?? "";
   if (!segment) return null;
@@ -62,7 +68,7 @@ export function ChapterScopeProvider({ children }: { children: ReactNode }) {
       name: current?.name ?? "New York",
       basePath,
       scopedHref: (href: string) =>
-        href.startsWith(HOME_PREFIX) && basePath !== HOME_PREFIX
+        isChapterPage(href) && basePath !== HOME_PREFIX
           ? `${basePath}${href.slice(HOME_PREFIX.length)}`
           : href,
     };

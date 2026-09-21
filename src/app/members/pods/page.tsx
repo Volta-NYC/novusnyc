@@ -125,7 +125,7 @@ export default function PodsPage() {
                     return (
                       <Link
                         key={row.pod.id}
-                        href={`/members/pods/${row.pod.slug}`}
+                        href={scope.scopedHref(`/members/pods/${row.pod.slug}`)}
                         className={`group relative overflow-hidden rounded-xl border bg-[#111418] p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg ${meta.border}`}
                       >
                         <div className={`absolute inset-y-0 left-0 w-1 ${division === "Finance" ? "bg-n-yellow" : "bg-n-orange"}`} />

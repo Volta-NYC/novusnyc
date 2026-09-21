@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
-import { useChapterScope, homePath } from "@/lib/members/chapterScope";
+import { useChapterScope, homePath, isChapterPage } from "@/lib/members/chapterScope";
 import { type AuthRole, subscribeSiteSettings } from "@/lib/members/storage";
 import { supabase } from "@/lib/supabaseClient";
 import { Modal } from "@/components/members/ui";
@@ -532,9 +532,14 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
             )}
             <div className={sidebarCollapsed ? "space-y-0.5" : "flex gap-1"}>
               {scope.chapters.map((chapter, index) => {
+                const chapterPage = homePathname.startsWith("/members/pods/")
+                  ? "/members/pods"
+                  : isChapterPage(homePathname)
+                    ? homePathname
+                    : authRole === "member" && !isTechLead ? "/members/pods" : "/members/projects";
                 const href = index === 0
-                  ? homePathname
-                  : `/members/${chapter.slug}${homePathname.slice("/members".length)}`;
+                  ? chapterPage
+                  : `/members/${chapter.slug}${chapterPage.slice("/members".length)}`;
                 const isCurrent = chapter.id === scope.chapterId;
                 return (
                   <Link
