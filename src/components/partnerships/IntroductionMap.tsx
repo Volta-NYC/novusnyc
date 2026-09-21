@@ -85,7 +85,7 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
   const compact = useCompact();
   const svgRef = useRef<SVGSVGElement>(null);
   const sceneRef = useRef<SVGGElement>(null);
-  const { interacted, zoomedIn, zoomBy, showAll, centreOn, reveal } = usePanZoom({
+  const { zoomedIn, zoomBy, showAll, centreOn, reveal } = usePanZoom({
     svgRef,
     sceneRef,
     width: VIEW_WIDTH,
@@ -185,6 +185,11 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
   };
   const nodeOpacity = (id: string) => (!neighbors || neighbors.has(id) ? 1 : DIM);
   const fade = reduced ? "" : "transition-opacity duration-[250ms] ease-out";
+  const mapControls = [
+    { label: "Zoom in", onClick: () => zoomBy(1.4), path: "M10 4 V16 M4 10 H16" },
+    { label: "Zoom out", onClick: () => zoomBy(1 / 1.4), path: "M4 10 H16" },
+    { label: "Show the whole map", onClick: showAll, path: "M4 8 V4 H8 M12 4 H16 V8 M16 12 V16 H12 M8 16 H4 V12" },
+  ];
 
   const focused = focusedId ? byId.get(focusedId) : undefined;
   // The panel keeps the organization it last showed while it fades out, so
@@ -404,37 +409,51 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
         </g>
       </svg>
 
-      <div className="absolute bottom-3 right-3 flex flex-col overflow-hidden rounded-xl border border-white/15 bg-n-dark/85 backdrop-blur-sm">
-        {[
-          { label: "Zoom in", onClick: () => zoomBy(1.4), path: "M10 4 V16 M4 10 H16" },
-          { label: "Zoom out", onClick: () => zoomBy(1 / 1.4), path: "M4 10 H16" },
-          { label: "Show the whole map", onClick: showAll, path: "M4 8 V4 H8 M12 4 H16 V8 M16 12 V16 H12 M8 16 H4 V12" },
-        ].map((control, index) => (
-          <button
-            key={control.label}
-            type="button"
-            onClick={control.onClick}
-            aria-label={control.label}
-            title={control.label}
-            className={`flex h-11 w-11 items-center justify-center text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70 ${index > 0 ? "border-t border-white/10" : ""}`}
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-              <path d={control.path} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        ))}
-      </div>
-
-      {compact && (
-        <p
-          aria-hidden="true"
-          className={`pointer-events-none absolute bottom-3 left-3 max-w-[15rem] rounded-full border border-white/15 bg-n-dark/85 px-3.5 py-2 font-body text-xs text-white/85 backdrop-blur-sm ${fade}`}
-          style={{ opacity: interacted ? 0 : 1 }}
-        >
-          Drag to explore, pinch to zoom, tap an organization
-        </p>
+      {!compact && (
+        <div className="absolute bottom-3 right-3 flex flex-col overflow-hidden rounded-xl border border-white/15 bg-n-dark/85 backdrop-blur-sm">
+          {mapControls.map((control, index) => (
+            <button
+              key={control.label}
+              type="button"
+              onClick={control.onClick}
+              aria-label={control.label}
+              title={control.label}
+              className={`flex h-11 w-11 items-center justify-center text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70 ${index > 0 ? "border-t border-white/10" : ""}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+                <path d={control.path} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          ))}
+        </div>
       )}
       </div>
+
+      {/* On a phone the ring is zoomed until its full height fills the frame,
+          which puts the bottom row of labels right at the edge. Anything laid
+          over the frame there covers names, so the hint and controls sit in a
+          bar underneath instead. */}
+      {compact && (
+        <div className="mt-3 flex items-center justify-between gap-3 px-4">
+          <p className="font-body text-xs text-white/60">Drag to explore, pinch to zoom, tap an organization</p>
+          <div className="flex shrink-0 overflow-hidden rounded-xl border border-white/15 bg-n-dark/85">
+            {mapControls.map((control, index) => (
+              <button
+                key={control.label}
+                type="button"
+                onClick={control.onClick}
+                aria-label={control.label}
+                title={control.label}
+                className={`flex h-11 w-11 items-center justify-center text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70 ${index > 0 ? "border-l border-white/10" : ""}`}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d={control.path} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {compact ? null : (
         <div aria-live="polite" className="mt-6 grid min-h-[25rem] border-t border-white/10 pt-7 lg:min-h-[22rem] xl:min-h-[19.5rem] [&>*]:col-start-1 [&>*]:row-start-1">
