@@ -26,8 +26,8 @@ export function usePanZoom({ svgRef, sceneRef, width, height, maxScale, initialS
   const touched = useRef(false);
   const suppressClick = useRef(false);
   const tween = useRef(0);
-  const [interacted, setInteracted] = useState(false);
   const [zoomedIn, setZoomedIn] = useState(false);
+  const isZoomedIn = useRef(false);
 
   const clampView = useCallback(
     (next: View): View => {
@@ -47,14 +47,17 @@ export function usePanZoom({ svgRef, sceneRef, width, height, maxScale, initialS
       view.current = clampView(next);
       const { k, x, y } = view.current;
       sceneRef.current?.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${k.toFixed(4)})`);
-      setZoomedIn(k > viewport.current.fit * 1.02);
+      const nextZoomedIn = k > viewport.current.fit * 1.02;
+      if (nextZoomedIn !== isZoomedIn.current) {
+        isZoomedIn.current = nextZoomedIn;
+        setZoomedIn(nextZoomedIn);
+      }
     },
     [clampView, sceneRef],
   );
 
   const markInteracted = useCallback(() => {
     touched.current = true;
-    setInteracted(true);
   }, []);
 
   const animateTo = useCallback(
@@ -264,5 +267,5 @@ export function usePanZoom({ svgRef, sceneRef, width, height, maxScale, initialS
 
   useEffect(() => () => cancelAnimationFrame(tween.current), []);
 
-  return { interacted, zoomedIn, zoomBy, showAll, centreOn, reveal };
+  return { zoomedIn, zoomBy, showAll, centreOn, reveal };
 }

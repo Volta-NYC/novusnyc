@@ -62,7 +62,6 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
   const frameRef = useRef<HTMLDivElement>(null);
   const inView = useInView(frameRef, { once: true, amount: 0.2 });
   const drawn = reduced || inView;
-  const [settled, setSettled] = useState(false);
   // Hovering previews an organization; clicking or tabbing to it keeps it
   // selected so the panel stays put while the reader moves down to it.
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -114,14 +113,6 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
   const ringIndex = useMemo(() => new Map(layout.order.map((id, index) => [id, index])), [layout]);
 
   const drawDelay = (index: number) => (reduced ? 0 : 0.15 + index * 0.03);
-  const chordDelay = reduced ? 0 : 0.15 + layout.order.length * 0.03 + 0.1;
-
-  useEffect(() => {
-    if (!drawn || reduced) return;
-    const timer = window.setTimeout(() => setSettled(true), (chordDelay + 1) * 1000);
-    return () => window.clearTimeout(timer);
-  }, [drawn, reduced, chordDelay]);
-
   useEffect(() => {
     const fromHash = () => {
       const id = window.location.hash.slice(1);
@@ -225,19 +216,6 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
               <circle cx={node.x} cy={node.y} r={node.r - 4} />
             </clipPath>
           ))}
-          {layout.edges.filter((edge) => edge.type === "intro").map((edge) => (
-            <mask key={edge.key} id={`pmap-mask-${edge.key}`} maskUnits="userSpaceOnUse" x={0} y={0} width={VIEW_WIDTH} height={VIEW_HEIGHT}>
-              <motion.path
-                d={edge.d}
-                fill="none"
-                stroke="white"
-                strokeWidth={10}
-                initial={{ pathLength: reduced ? 1 : 0 }}
-                animate={{ pathLength: drawn ? 1 : 0 }}
-                transition={{ duration: reduced ? 0 : 0.9, delay: chordDelay, ease: [0.22, 1, 0.36, 1] }}
-              />
-            </mask>
-          ))}
         </defs>
 
         <rect x={0} y={0} width="100%" height="100%" fill="transparent" onClick={() => setSelectedId(null)} />
@@ -287,15 +265,11 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
                   strokeWidth={1.8}
                   strokeDasharray="6 5"
                   strokeLinecap="round"
-                  mask={`url(#pmap-mask-${edge.key})`}
                 />
                 {edge.arrow && (
-                  <motion.path
+                  <path
                     d={edge.arrow}
                     fill={PEACH}
-                    initial={{ opacity: reduced ? 1 : 0 }}
-                    animate={{ opacity: drawn ? 1 : 0 }}
-                    transition={{ duration: reduced ? 0 : 0.3, delay: reduced ? 0 : chordDelay + 0.8 }}
                   />
                 )}
               </g>
@@ -303,32 +277,7 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
           })}
         </g>
 
-        {settled && (
-          <g aria-hidden="true" className="pointer-events-none">
-            {layout.edges.filter((edge) => edge.type === "spoke").map((edge) => {
-              const index = ringIndex.get(edge.to) ?? 0;
-              const duration = 5.5 + (index % 4) * 0.7;
-              const begin = `${((index * 0.61) % duration).toFixed(2)}s`;
-              const active = !focusedId || edge.to === focusedId;
-              return (
-                <g key={edge.key} className={fade} style={{ opacity: active ? 0.9 : 0.1 }}>
-                  <circle r={2.6} fill={PEACH} opacity={0}>
-                    <animateMotion dur={`${duration}s`} begin={begin} repeatCount="indefinite" path={edge.d} />
-                    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.8;1" dur={`${duration}s`} begin={begin} repeatCount="indefinite" />
-                  </circle>
-                </g>
-              );
-            })}
-          </g>
-        )}
-
         <g aria-hidden="true" className={`pointer-events-none ${fade}`} style={{ opacity: nodeOpacity("novus") }}>
-          {!reduced && (
-            <circle cx={CENTER.x} cy={CENTER.y} r={NOVUS_RADIUS + 8} fill="none" stroke={PEACH} strokeWidth={1}>
-              <animate attributeName="r" values={`${NOVUS_RADIUS + 8};${NOVUS_RADIUS + 26}`} dur="4.5s" repeatCount="indefinite" />
-              <animate attributeName="stroke-opacity" values="0.3;0" dur="4.5s" repeatCount="indefinite" />
-            </circle>
-          )}
           <circle cx={CENTER.x} cy={CENTER.y} r={NOVUS_RADIUS + 8} fill="none" stroke={PEACH} strokeOpacity={0.22} strokeWidth={1} />
           <circle cx={CENTER.x} cy={CENTER.y} r={NOVUS_RADIUS} fill="rgb(var(--color-dark))" stroke={PEACH} strokeOpacity={0.85} strokeWidth={2} />
           <image
@@ -475,25 +424,11 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
   );
 }
 
-// A logo that failed to load leaves the browser's broken-image mark inside the
-// circle, so each one is proven to load before it is drawn and the monogram
-// stands in until then.
 function NodeMark({ partner, node }: { partner: PublicPartnership; node: NodeLayout }) {
   const src = partner.logo ? optimizedLogo(partner.logo) : null;
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!src) return;
-    let live = true;
-    const image = new window.Image();
-    image.onload = () => { if (live) setLoaded(true); };
-    image.src = src;
-    return () => { live = false; };
-  }, [src]);
-
-  if (!src || !loaded) {
-    const text = monogram(partner);
-    return (
+  const text = monogram(partner);
+  return (
+    <>
       <text
         x={node.x}
         y={node.y + 3}
@@ -503,17 +438,17 @@ function NodeMark({ partner, node }: { partner: PublicPartnership; node: NodeLay
       >
         {text}
       </text>
-    );
-  }
-  return (
-    <image
-      href={src}
-      x={node.x - (node.r - 6)}
-      y={node.y - (node.r - 6)}
-      width={(node.r - 6) * 2}
-      height={(node.r - 6) * 2}
-      preserveAspectRatio="xMidYMid meet"
-      clipPath={`url(#pmap-clip-${node.id})`}
-    />
+      {src && (
+        <image
+          href={src}
+          x={node.x - (node.r - 6)}
+          y={node.y - (node.r - 6)}
+          width={(node.r - 6) * 2}
+          height={(node.r - 6) * 2}
+          preserveAspectRatio="xMidYMid meet"
+          clipPath={`url(#pmap-clip-${node.id})`}
+        />
+      )}
+    </>
   );
 }
