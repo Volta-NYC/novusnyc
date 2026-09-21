@@ -8,12 +8,13 @@ import {
   Modal, Field, Input, Select, TextArea,
 } from "@/components/members/ui";
 import {
-  subscribeBusinesses, subscribeTeam, subscribeChapters, updateBusiness, createBusiness,
+  subscribeBusinesses, subscribeChapters, updateBusiness, createBusiness,
   notifyDraftReady, revalidatePublicPages,
   TECH_STATUSES, TECH_PIPELINE, TECH_PRIORITIES,
-  type Business, type TeamMember, type TechStatus, type TechPriority, type Chapter,
+  type Business, type TechStatus, type TechPriority, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope, inChapter } from "@/lib/members/chapterScope";
 import ProjectPanel, { type ProjectPanelFocus } from "./ProjectPanel";
 import PublicCardOrderModal from "./PublicCardOrderModal";
 
@@ -119,11 +120,11 @@ function ProjectsPageInner() {
 
   const [businesses, setBusinesses] = useState<Business[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [team, setTeam]             = useState<TeamMember[]>([]);
   const [chapters, setChapters]     = useState<Chapter[]>([]);
-  // Which market's clients we're looking at. Tech work is remote, but the
-  // clients themselves are firmly in one city or the other.
-  const [chapterId, setChapterId]   = useState<string | null>(null);
+  // The chapter comes from the URL now: /members/projects is New York and
+  // /members/chicago/projects is Chicago, each a list of its own.
+  const scope = useChapterScope();
+  const chapterId = scope.chapterId;
   // The view is addressable, so /members/projects?view=leads is linkable and the
   // retired /members/projects/discovery route has somewhere real to land.
   const searchParams = useSearchParams();
@@ -139,9 +140,7 @@ function ProjectsPageInner() {
   const [panelFocus, setPanelFocus] = useState<ProjectPanelFocus>("primaryLink");
   const [focusRequestKey, setFocusRequestKey] = useState(0);
   const [blocked, setBlocked]       = useState<string | null>(null);
-  const [quickAdd, setQuickAdd]     = useState("");
   const [adding, setAdding]         = useState(false);
-  const [quickAddError, setQuickAddError] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [createDraft, setCreateDraft] = useState<NewProjectDraft>(EMPTY_PROJECT_DRAFT);
   const [createError, setCreateError] = useState("");
@@ -153,15 +152,8 @@ function ProjectsPageInner() {
     setBusinesses(rows);
     setLoadError(state.error);
   }), []);
-  useEffect(() => subscribeTeam(setTeam), []);
   useEffect(() => subscribeChapters(setChapters), []);
 
-
-  const nameById = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const t of team) m.set(t.id, t.name);
-    return m;
-  }, [team]);
 
   // Never name a chapter id in code: the default is whichever chapter sorts
   // first, so renaming or reordering them doesn't silently break the filter.
@@ -173,7 +165,7 @@ function ProjectsPageInner() {
     if (!businesses) return [];
     const q = search.trim().toLowerCase();
     let list = businesses.filter((b) => !b.archived);
-    if (chapterId) list = list.filter((b) => (b.chapterId ?? defaultChapterId) === chapterId);
+    list = list.filter((b) => inChapter(b.chapterId, chapterId, defaultChapterId));
 
     if (tab === "backlog") {
       list = list.filter(isBacklog);
@@ -195,7 +187,6 @@ function ProjectsPageInner() {
         (b.notes ?? "").toLowerCase().includes(q) ||
         (b.neighborhood ?? "").toLowerCase().includes(q) ||
         (b.ownerName ?? "").toLowerCase().includes(q) ||
-        (b.assignees ?? []).some((id) => (nameById.get(id) ?? "").toLowerCase().includes(q)) ||
         [b.liveUrl, b.previewUrl, b.clientUrl].some((u) => (u ?? "").toLowerCase().includes(q)));
     }
 
@@ -208,14 +199,14 @@ function ProjectsPageInner() {
     return [...list].sort((a, b) =>
       (b.lastTouchedAt ?? b.updatedAt ?? "").localeCompare(a.lastTouchedAt ?? a.updatedAt ?? "")
       || a.name.localeCompare(b.name));
-  }, [businesses, tab, view, search, nameById, statusFilter, chapterId, defaultChapterId]);
+  }, [businesses, tab, view, search, statusFilter, chapterId, defaultChapterId]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     for (const s of TECH_STATUSES) c[s] = 0;
     for (const b of businesses ?? []) {
       if (b.archived) continue;
-      if (chapterId && (b.chapterId ?? defaultChapterId) !== chapterId) continue;
+      if (!inChapter(b.chapterId, chapterId, defaultChapterId)) continue;
       c[b.techStatus ?? "Backlog"] = (c[b.techStatus ?? "Backlog"] ?? 0) + 1;
     }
     return c;
@@ -226,7 +217,7 @@ function ProjectsPageInner() {
     let backlog = 0;
     for (const b of businesses ?? []) {
       if (b.archived) continue;
-      if (chapterId && (b.chapterId ?? defaultChapterId) !== chapterId) continue;
+      if (!inChapter(b.chapterId, chapterId, defaultChapterId)) continue;
       if (isBacklog(b)) backlog += 1; else active += 1;
     }
     return { active, backlog };
@@ -240,14 +231,37 @@ function ProjectsPageInner() {
     setFocusRequestKey((key) => key + 1);
   };
 
-  const openCreateForm = (name = "") => {
+  const openCreateForm = () => {
     setCreateDraft({
       ...EMPTY_PROJECT_DRAFT,
-      name,
       chapterId: chapterId ?? defaultChapterId ?? "",
     });
     setCreateError("");
     setCreateOpen(true);
+  };
+
+  // Pasting a link into the name field fills the rest of the form, because a
+  // pasted Vercel link is how most of these projects start.
+  const applyPastedLink = (raw: string) => {
+    const value = raw.trim();
+    if (!/^(https?:\/\/|www\.)/i.test(value)) return false;
+    const url = value.startsWith("http") ? value : `https://${value}`;
+    let host = url;
+    try { host = new URL(url).host; } catch { return false; }
+    const bare = host.replace(/^www\./, "");
+    const preview = bare.endsWith(".vercel.app");
+    const name = (preview ? bare.replace(/\.vercel\.app$/, "") : bare.replace(/\.[a-z.]+$/i, ""))
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim();
+    setCreateDraft((draft) => ({
+      ...draft,
+      name,
+      techStatus: preview ? "Draft Ready" : "Live",
+      previewUrl: preview ? url : draft.previewUrl,
+      liveUrl: preview ? draft.liveUrl : url,
+    }));
+    return true;
   };
 
   const createProjectRecord = async (draft: NewProjectDraft) => {
@@ -323,70 +337,6 @@ function ProjectsPageInner() {
     }
   };
 
-  // One field. Paste a link or type a name — the doc this replaces was a list
-  // of pasted links, so pasting one has to be the whole interaction.
-  const addProject = async () => {
-    const raw = quickAdd.trim();
-    if (adding) return;
-    setQuickAddError("");
-    if (!raw) {
-      openCreateForm();
-      return;
-    }
-
-    const looksLikeUrl = /^(https?:\/\/|www\.)|\.[a-z]{2,}(\/|$)/i.test(raw);
-    let name = raw;
-    let previewUrl: string | undefined;
-    let liveUrl: string | undefined;
-    let techStatus: TechStatus = "Backlog";
-
-    if (looksLikeUrl) {
-      const url = raw.startsWith("http") ? raw : `https://${raw}`;
-      let host = url;
-      try { host = new URL(url).host; } catch { /* keep the raw string */ }
-      const bare = host.replace(/^www\./, "");
-      if (bare.endsWith(".vercel.app")) {
-        previewUrl = url;
-        techStatus = "Draft Ready";
-        name = bare.replace(/\.vercel\.app$/, "");
-      } else {
-        liveUrl = url;
-        techStatus = "Live";
-        name = bare.replace(/\.[a-z.]+$/i, "");
-      }
-      name = name.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).trim();
-    }
-
-    // Adding the same site twice is the easy mistake here; open the existing
-    // one instead of making a second row.
-    const existing = (businesses ?? []).find((b) =>
-      (previewUrl && b.previewUrl === previewUrl) ||
-      (liveUrl && b.liveUrl === liveUrl) ||
-      b.name.trim().toLowerCase() === name.toLowerCase());
-    if (existing) {
-      setQuickAdd("");
-      setOpenId(existing.id);
-      return;
-    }
-
-    setAdding(true);
-    try {
-      await createProjectRecord({
-        ...EMPTY_PROJECT_DRAFT,
-        name,
-        techStatus,
-        previewUrl: previewUrl ?? "",
-        liveUrl: liveUrl ?? "",
-        chapterId: chapterId ?? defaultChapterId ?? "",
-      });
-      setQuickAdd("");
-    } catch (error) {
-      setQuickAddError(error instanceof Error ? error.message : "The website project was not added.");
-    } finally {
-      setAdding(false);
-    }
-  };
-
   const submitCreateForm = async () => {
     if (!createDraft.name.trim() || adding) return;
     const duplicate = (businesses ?? []).find((business) =>
@@ -424,9 +374,14 @@ function ProjectsPageInner() {
   return (
     <MembersLayout>
       <PageHeader
-        title="Tech Projects"
-        subtitle="Website pipeline, ownership, links, and public presentation."
-        action={canPublish ? <Btn variant="secondary" onClick={() => setOrderOpen(true)}>Arrange showcase cards</Btn> : undefined}
+        title="Websites"
+        subtitle="Every business we build for, and where each site stands."
+        action={
+          <div className="flex items-center gap-2">
+            {canPublish && <Btn variant="secondary" onClick={() => setOrderOpen(true)}>Arrange showcase cards</Btn>}
+            {canEdit && <Btn variant="primary" onClick={() => openCreateForm()}>New project</Btn>}
+          </div>
+        }
       />
 
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New website project">
@@ -438,7 +393,10 @@ function ProjectsPageInner() {
                   autoFocus
                   value={createDraft.name}
                   onChange={(e) => setCreateDraft((draft) => ({ ...draft, name: e.target.value }))}
-                  placeholder="Business name"
+                  onPaste={(e) => {
+                    if (applyPastedLink(e.clipboardData.getData("text"))) e.preventDefault();
+                  }}
+                  placeholder="Business name, or paste a site link"
                 />
               </Field>
             </div>
@@ -515,6 +473,12 @@ function ProjectsPageInner() {
         </div>
       </Modal>
 
+      {publicError && <p role="alert" className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{publicError}</p>}
+
+      <div className="mb-3">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search by business, link, or note" />
+      </div>
+
       {/* Styled to match SectionTabs so the portal has one tab idiom, but held
           in state rather than the URL: this splits one list, it is not a route. */}
       <div className="mb-4 overflow-x-auto pb-1">
@@ -542,7 +506,7 @@ function ProjectsPageInner() {
 
       {tab === "backlog" && (
         <p className="mb-3 px-1 text-[11px] text-white/45">
-          Website form submissions still at Backlog. Moving one to Assigned or beyond files it under Active.
+          Projects awaiting triage, including website form submissions. Changing the status moves a project to Active.
         </p>
       )}
 
@@ -577,79 +541,26 @@ function ProjectsPageInner() {
             onClick={() => setStatusFilter(new Set())}
             className="text-[11px] text-white/45 underline decoration-white/20 hover:text-white/75"
           >
-            Clear
+            Show all statuses
           </button>
         )}
       </div>
       )}
 
-      {chapters.length > 1 && (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-[10px] uppercase tracking-wide text-white/35">Clients in</span>
-          {[{ id: null, name: "All" }, ...[...chapters].sort((a, b) => a.sortOrder - b.sortOrder)].map((c) => {
-            // Counts follow the tab, or switching tabs leaves numbers that
-            // disagree with the rows underneath them.
-            const inTab = (b: Business) => (tab === "backlog" ? isBacklog(b) : !isBacklog(b));
-            const count = c.id === null
-              ? (businesses ?? []).filter((b) => !b.archived && inTab(b)).length
-              : (businesses ?? []).filter((b) => !b.archived && inTab(b) && (b.chapterId ?? defaultChapterId) === c.id).length;
-            return (
-              <button
-                key={c.id ?? "all"}
-                onClick={() => setChapterId(c.id)}
-                className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-                  chapterId === c.id
-                    ? "border-[#F3E28D]/45 bg-[#F3E28D]/15 text-[#F3E28D]"
-                    : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white/85"
-                }`}
-              >
-                {c.name}
-                <span className="ml-1.5 font-mono tabular-nums text-white/35">{count}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {canEdit && (
-        <div className="mb-3">
-          <div className="flex items-center gap-2">
-            <input
-              value={quickAdd}
-              onChange={(e) => { setQuickAdd(e.target.value); if (quickAddError) setQuickAddError(""); }}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addProject(); } }}
-              placeholder="Paste a Vercel link or type a business name"
-              aria-label="Add a website"
-              className="min-h-10 flex-1 rounded-lg border border-white/15 bg-[#0F1014] px-3 py-2 text-[13px] text-white/90 placeholder:text-white/35 focus:border-[#F3E28D]/50 focus:outline-none"
-            />
-            <Btn variant="primary" onClick={() => void addProject()} disabled={adding}>
-              {adding ? "Adding…" : "Add"}
+      {tab === "active" && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {VIEWS.map((v) => (
+            <Btn
+              key={v.key}
+              variant={view === v.key ? "primary" : "secondary"}
+              aria-pressed={view === v.key}
+              onClick={() => { setView(v.key); setStatusFilter(new Set()); }}
+            >
+              {v.label}
             </Btn>
-          </div>
-          {quickAddError && <p role="alert" className="mt-1.5 text-xs text-red-300">{quickAddError}</p>}
+          ))}
         </div>
       )}
-
-      {publicError && <p role="alert" className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{publicError}</p>}
-
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        {tab === "active" && VIEWS.map((v) => (
-          <button
-            key={v.key}
-            onClick={() => { setView(v.key); setStatusFilter(new Set()); }}
-            className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-              view === v.key
-                ? "border-[#F3E28D]/40 bg-[#F3E28D]/15 text-[#F3E28D]"
-                : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/20 hover:text-white/80"
-            }`}
-          >
-            {v.label}
-          </button>
-        ))}
-        <div className="ml-auto min-w-[200px] flex-1 sm:max-w-xs">
-          <SearchBar value={search} onChange={setSearch} placeholder="Search name, note, assignee, URL…" />
-        </div>
-      </div>
 
       {loadError ? (
         <LoadError message={loadError} onRetry={() => window.location.reload()} />
@@ -661,14 +572,14 @@ function ProjectsPageInner() {
           : `Nothing in Active${view === "all" ? "" : ` · ${VIEWS.find((v) => v.key === view)?.label}`}.`} />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-white/15">
-          <table className={`w-full table-fixed border-collapse ${canPublish ? "min-w-[1080px]" : "min-w-[880px]"}`}>
+          <table className={`w-full table-fixed border-collapse ${canPublish ? "min-w-[940px]" : "min-w-[720px]"}`}>
             <colgroup>
-              <col className="w-[20%]" /><col className="w-[13%]" /><col className="w-[15%]" />
+              <col className="w-[25%]" /><col className="w-[13%]" />
               <col className="w-[18%]" /><col />{canPublish && <col className="w-[170px]" />}<col className="w-[64px]" />
             </colgroup>
             <thead>
               <tr className="bg-white/[0.04]">
-                {["Business", "Status", "Assigned to", "Links", "Note", ...(canPublish ? ["Public"] : []), "Updated"].map((h) => (
+                {["Business", "Status", "Links", "Note", ...(canPublish ? ["Public"] : []), "Updated"].map((h) => (
                   <th
                     key={h}
                     className="border-b border-white/15 px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-white/45"
@@ -680,7 +591,6 @@ function ProjectsPageInner() {
             </thead>
             <tbody>
               {rows.map((b) => {
-                const assigned = (b.assignees ?? []).map((id) => nameById.get(id) ?? id);
                 // Show the real address either way. Which link exists is not the
                 // same fact as what status the project is in, and colouring the
                 // URL by it made the two look like one thing.
@@ -720,14 +630,6 @@ function ProjectsPageInner() {
                           <Badge label={b.techPriority} />
                         )}
                       </div>
-                    </td>
-
-                    <td className="px-3 py-2">
-                      <button type="button" onClick={() => openProject(b.id, "assignees")} className="block w-full rounded text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F6B78D]/70" aria-label={`Edit assignees for ${b.name}`}>
-                      <span className="block truncate text-[11px] text-white/70" title={assigned.join(", ")}>
-                        {assigned.length ? assigned.join(", ") : <span className="text-white/25">—</span>}
-                      </span>
-                      </button>
                     </td>
 
                     <td className="cursor-pointer px-3 py-2" onClick={() => openProject(b.id, "primaryLink")}>
@@ -805,7 +707,6 @@ function ProjectsPageInner() {
       {open && (
         <ProjectPanel
           business={open}
-          team={team}
           canEdit={canEdit}
           canPublish={canPublish}
           blocked={blocked}
@@ -813,6 +714,7 @@ function ProjectsPageInner() {
           focusRequestKey={focusRequestKey}
           onClose={() => { setOpenId(null); setBlocked(null); }}
           onStatus={(s) => setStatus(open, s)}
+          onDeleted={() => { setOpenId(null); setBlocked(null); }}
         />
       )}
 

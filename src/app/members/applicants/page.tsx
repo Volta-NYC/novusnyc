@@ -2,6 +2,7 @@
 import { getAuthToken } from "@/lib/members/supabaseAuth";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import MembersLayout from "@/components/members/MembersLayout";
 import SectionTabs, { APPLICANTS_GROUP_TABS } from "@/components/members/SectionTabs";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/lib/members/storage";
 import { ACCEPTANCE_PLACEMENTS } from "@/lib/members/acceptancePlacements";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope } from "@/lib/members/chapterScope";
 import { gradeToClassOf } from "@/lib/grades";
 import { DEFAULT_MEMBER_ROLE } from "@/lib/members/roles";
 
@@ -113,6 +115,11 @@ const COLUMN_WIDTH_PX: Record<ColumnKey, number> = {
 };
 
 
+/** An application with no chapter on it is a New York one: the field is newer. */
+function chapterOf(app: { chapter?: string | null }, homeChapterName: string): string {
+  return (app.chapter ?? "").trim() || homeChapterName;
+}
+
 export default function ApplicantsPage() {
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -136,6 +143,9 @@ export default function ApplicantsPage() {
   const [acceptSettingsMsg, setAcceptSettingsMsg] = useState("");
   const { ask, Dialog } = useConfirm();
   const { authRole, user } = useAuth();
+  const scope = useChapterScope();
+  const homeChapterName = scope.chapters[0]?.name ?? "New York";
+  const homeChapterId = scope.chapters[0]?.id ?? null;
   const canEdit = authRole === "owner";
   const canDelete = authRole === "owner";
   const canManageStatus = authRole === "owner";
@@ -194,8 +204,11 @@ export default function ApplicantsPage() {
 
   const filtered = useMemo(() => {
     const q = normalize(search);
-    const base = [...applications]
+    const base = (scope.chapterId ? [...applications] : [])
       .filter((app) => {
+        // The applicant's chapter is free text on the form. An empty one is a
+        // New York application, which is how every pre-chapters row reads.
+        if (normalize(chapterOf(app, homeChapterName)) !== normalize(scope.name)) return false;
         if (!showAcceptedApplicants && normalize(app.status) === "accepted") return false;
         if (!q) return true;
         return normalize(app.fullName).includes(q)
@@ -206,18 +219,36 @@ export default function ApplicantsPage() {
     // Always sort by most recent application first
     base.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return base;
-  }, [applications, search, showAcceptedApplicants]);
+  }, [applications, search, showAcceptedApplicants, scope.name, scope.chapterId, homeChapterName]);
 
-  const totalApplicantsCount = applications.length;
-  const acceptedApplicantsCount = applications.filter((app) => normalize(app.status) === "accepted").length;
+  // The counts describe the chapter you are looking at, like the list does.
+  const chapterApplications = useMemo(
+    () => scope.chapterId ? applications.filter((app) => normalize(chapterOf(app, homeChapterName)) === normalize(scope.name)) : [],
+    [applications, homeChapterName, scope.name, scope.chapterId],
+  );
+  const totalApplicantsCount = chapterApplications.length;
+  const acceptedApplicantsCount = chapterApplications.filter((app) => normalize(app.status) === "accepted").length;
   // Someone who reapplied after already joining is not awaiting anything, so
   // counting them as pending overstates the queue.
-  const awaitingDecisionCount = applications.filter(
+  const awaitingDecisionCount = chapterApplications.filter(
     (app) => normalize(app.status) !== "accepted" && !app.memberId,
   ).length;
-  const alreadyMemberCount = applications.filter(
+  const alreadyMemberCount = chapterApplications.filter(
     (app) => normalize(app.status) !== "accepted" && !!app.memberId,
   ).length;
+
+  // A second chapter gets a handful of applications a term, so they are easy
+  // to forget behind New York's queue. Say so on the page instead.
+  const otherChapterQueues = scope.chapters
+    .filter((chapter) => chapter.id !== scope.chapterId && chapter.id !== homeChapterId)
+    .map((chapter) => ({
+      chapter,
+      waiting: applications.filter((app) =>
+        normalize(chapterOf(app, homeChapterName)) === normalize(chapter.name)
+        && normalize(app.status) !== "accepted"
+        && !app.memberId).length,
+    }))
+    .filter((entry) => entry.waiting > 0);
 
   const selectableFilteredIds = useMemo(() => filtered.map((app) => app.id), [filtered]);
 
@@ -466,8 +497,20 @@ export default function ApplicantsPage() {
       </Modal>
 
       <PageHeader
-        title="Applicants"
+        title={scope.slug ? `${scope.name} applicants` : "Applicants"}
       />
+
+      {otherChapterQueues.map(({ chapter, waiting }) => (
+        <Link
+          key={chapter.id}
+          href={`/members/${chapter.slug}/applicants`}
+          className="mb-3 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-[12px] text-amber-900 transition-colors hover:border-amber-400 hover:bg-amber-100"
+        >
+          <span className="font-semibold">{chapter.name}</span>
+          <span>{waiting} {waiting === 1 ? "application is" : "applications are"} waiting on a decision</span>
+          <span className="ml-auto font-semibold">Open {chapter.name} applicants →</span>
+        </Link>
+      ))}
       <div className="flex flex-wrap items-center gap-4 mb-1 text-[11px] text-white/55">
         <span>Total applications: <span className="text-white/85 font-semibold">{totalApplicantsCount}</span></span>
         <span>Accepted: <span className="text-emerald-300 font-semibold">{acceptedApplicantsCount}</span></span>
@@ -751,7 +794,7 @@ export default function ApplicantsPage() {
         </table>
       </div>
 
-      {loadingData ? (
+      {loadingData || !scope.chapterId ? (
         <div className="mt-4"><SkeletonRows rows={8} cols={6} /></div>
       ) : filtered.length === 0 ? (
         <Empty message="No applicants yet." />

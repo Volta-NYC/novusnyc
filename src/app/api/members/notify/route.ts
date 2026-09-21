@@ -16,9 +16,7 @@ export const runtime = "nodejs";
 
 type Subject = {
   businessId?: string;
-  assignmentId?: string;
   strikeId?: string;
-  addedAssigneeIds?: string[];
 };
 
 type Resolved = { to: string[]; variables: Record<string, string> } | null;
@@ -44,35 +42,6 @@ async function emailsFor(ids: string[]): Promise<{ email: string; name: string }
 async function resolve(automationId: string, subject: Subject): Promise<Resolved> {
   const sb = getSupabaseAdmin();
 
-  if (automationId === "project_assigned") {
-    if (!subject.businessId) return null;
-    const { data: biz, error } = await sb.from("businesses")
-      .select("name, neighborhood, owner_name, owner_email, phone, assignees")
-      .eq("id", subject.businessId).is("deleted_at", null).maybeSingle();
-    if (error) throw new Error(`business_lookup_failed: ${error.message}`);
-    if (!biz) return null;
-    const savedAssigneeIds = ((biz.assignees ?? []) as string[]).map(String);
-    const requestedIds = Array.isArray(subject.addedAssigneeIds)
-      ? subject.addedAssigneeIds.map(String).slice(0, MAX_RECIPIENTS)
-      : savedAssigneeIds;
-    // The client may identify which assignees were newly added, but it never
-    // supplies email addresses. Only IDs that are actually on the saved
-    // project are accepted, and addresses are resolved server-side.
-    const people = await emailsFor(requestedIds.filter((id) => savedAssigneeIds.includes(id)));
-    if (people.length === 0) return null;
-    const contact = [biz.owner_name, biz.owner_email, biz.phone]
-      .map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ");
-    return {
-      to: people.map((p) => p.email),
-      variables: {
-        memberName: people.length === 1 ? firstName(people[0].name) : "there",
-        businessName: String(biz.name ?? ""),
-        neighborhoodPart: biz.neighborhood ? ` in ${String(biz.neighborhood)}` : "",
-        contactPart: contact || "No contact details on file yet.",
-      },
-    };
-  }
-
   if (automationId === "project_draft_ready") {
     if (!subject.businessId) return null;
     const { data: biz, error: businessError } = await sb.from("businesses")
@@ -95,29 +64,6 @@ async function resolve(automationId: string, subject: Subject): Promise<Resolved
         businessName: String(biz.name ?? ""),
         assigneeNames: assignees.map((a) => a.name).join(", ") || "the team",
         previewUrl: String(biz.preview_url ?? biz.live_url ?? ""),
-      },
-    };
-  }
-
-  if (automationId === "pod_task_assigned") {
-    if (!subject.assignmentId) return null;
-    const { data: task, error: taskError } = await sb.from("assignments")
-      .select("title, due_date, pod_id, assigned_member_ids")
-      .eq("id", subject.assignmentId).is("deleted_at", null).maybeSingle();
-    if (taskError) throw new Error(`assignment_lookup_failed: ${taskError.message}`);
-    if (!task) return null;
-    const people = await emailsFor(((task.assigned_member_ids ?? []) as string[]).map(String));
-    if (people.length === 0) return null;
-    const { data: pod, error: podError } = await sb.from("pods").select("name")
-      .eq("id", String(task.pod_id ?? "")).maybeSingle();
-    if (podError) throw new Error(`pod_lookup_failed: ${podError.message}`);
-    return {
-      to: people.map((p) => p.email),
-      variables: {
-        memberName: people.length === 1 ? firstName(people[0].name) : "there",
-        taskTitle: String(task.title ?? "Your task"),
-        podName: String(pod?.name ?? "your pod"),
-        dueDatePart: task.due_date ? `Due ${String(task.due_date)}` : "No deadline set",
       },
     };
   }
@@ -180,20 +126,8 @@ export async function POST(req: NextRequest) {
   const privileged = verified.caller.role === "owner" || verified.caller.role === "admin";
 
   let authorized = privileged;
-  if (!authorized && ["project_assigned", "project_draft_ready"].includes(automationId)) {
+  if (!authorized && automationId === "project_draft_ready") {
     authorized = callerRow?.role === "Developer";
-  }
-  if (!authorized && automationId === "pod_task_assigned" && body.subject?.assignmentId) {
-    const { data: task, error: taskError } = await sb.from("assignments").select("pod_id")
-      .eq("id", body.subject.assignmentId).maybeSingle();
-    if (taskError) return NextResponse.json({ error: "assignment_lookup_failed" }, { status: 500 });
-    const membershipResult = task?.pod_id && callerRow?.id
-      ? await sb.from("pod_members").select("id", { count: "exact", head: true })
-          .eq("pod_id", task.pod_id).eq("member_id", callerRow.id)
-          .eq("role", "lit").is("left_at", null)
-      : { count: 0, error: null };
-    if (membershipResult.error) return NextResponse.json({ error: "pod_membership_lookup_failed" }, { status: 500 });
-    authorized = (membershipResult.count ?? 0) > 0;
   }
   // Infractions are sensitive personnel actions. Attendance infractions use a
   // separate route that verifies the LIT against the meeting and pod.
@@ -210,9 +144,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unknown_automation_or_subject" }, { status: 400 });
   }
 
-  const subjectKey = body.subject?.businessId
-    ?? body.subject?.assignmentId
-    ?? body.subject?.strikeId;
+  const subjectKey = body.subject?.businessId ?? body.subject?.strikeId;
   if (!subjectKey) {
     return NextResponse.json({ error: "missing_subject_key" }, { status: 400 });
   }

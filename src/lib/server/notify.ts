@@ -1,7 +1,7 @@
 import "server-only";
 
 import { renderAutomationEmail } from "@/lib/server/templateRenderer";
-import { createTransportForFrom, getDefaultFromAddress, getDefaultReplyToAddress, resolveFromWithName } from "@/lib/server/smtp";
+import { createTransportForFrom, getDefaultFromAddress, htmlToText } from "@/lib/server/smtp";
 import { SITE_URL } from "@/lib/site";
 
 export interface NotifyResult {
@@ -41,10 +41,9 @@ export async function sendAutomationEmail(
   for (const address of to) {
     try {
       await transporter.sendMail({
-        from: resolveFromWithName(from),
         to: address,
-        replyTo: getDefaultReplyToAddress(from),
         subject: rendered.subject,
+        text: htmlToText(rendered.html),
         html: rendered.html,
       });
       sent += 1;

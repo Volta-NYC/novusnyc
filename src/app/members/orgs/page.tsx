@@ -14,6 +14,7 @@ import {
   type BID, type BIDContact, type Chapter,
 } from "@/lib/members/storage";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope, inChapter as rowInChapter } from "@/lib/members/chapterScope";
 import { findCommunityPartner } from "@/data";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
@@ -59,7 +60,8 @@ const BLANK_FORM: Omit<BID, "id" | "createdAt" | "updatedAt" | "timeline"> = {
 export default function BIDTrackerPage() {
   const [bids, setBids]               = useState<BID[]>([]);
   const [chapters, setChapters]       = useState<Chapter[]>([]);
-  const [chapterId, setChapterId]     = useState<string | null>(null);
+  const scope = useChapterScope();
+  const chapterId = scope.chapterId;
   const [search, setSearch]           = useState("");
   const [modal, setModal]             = useState<"create" | "edit" | null>(null);
   const [editingBID, setEditingBID]   = useState<BID | null>(null);
@@ -259,16 +261,13 @@ export default function BIDTrackerPage() {
   };
 
   const defaultChapterId = [...chapters].sort((a, b) => a.sortOrder - b.sortOrder)[0]?.id ?? null;
-  const filtered = bids
-    .filter((b) => !chapterId || (b.chapterId ?? defaultChapterId) === chapterId)
-    .filter(matchesSearch);
-  const sorted = sortBids(filtered);
+  const chapterBids = bids.filter((b) => rowInChapter(b.chapterId, chapterId, defaultChapterId));
+  const sorted = sortBids(chapterBids.filter(matchesSearch));
 
-  const inChapter = bids.filter((b) => !chapterId || (b.chapterId ?? defaultChapterId) === chapterId);
   const stats = {
-    total:    inChapter.length,
-    active:   inChapter.filter(b => b.status === "Active Partner").length,
-    pipeline: inChapter.filter(b => ["Outreach", "In Conversation"].includes(b.status)).length,
+    total:    chapterBids.length,
+    active:   chapterBids.filter(b => b.status === "Active Partner").length,
+    pipeline: chapterBids.filter(b => ["Outreach", "In Conversation"].includes(b.status)).length,
   };
 
   return (
@@ -279,31 +278,6 @@ export default function BIDTrackerPage() {
         title="Partner Organizations"
         action={canEdit ? <Btn variant="primary" onClick={openCreate}>+ New Partner</Btn> : undefined}
       />
-
-      {chapters.length > 1 && (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          {[{ id: null as string | null, name: "All" },
-            ...[...chapters].sort((a, b) => a.sortOrder - b.sortOrder)].map((c) => {
-            const n = c.id === null
-              ? bids.length
-              : bids.filter((b) => (b.chapterId ?? defaultChapterId) === c.id).length;
-            return (
-              <button
-                key={c.id ?? "all"}
-                onClick={() => setChapterId(c.id)}
-              className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-                chapterId === c.id
-                    ? "border-amber-200 bg-amber-50 text-amber-800"
-                    : "border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900"
-                }`}
-              >
-                {c.name}
-                <span className="ml-1.5 font-mono tabular-nums text-stone-400">{n}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
@@ -385,7 +359,7 @@ export default function BIDTrackerPage() {
             </article>
           );
         })}
-        {filtered.length === 0 && (
+        {sorted.length === 0 && (
           <div className="sm:col-span-2 xl:col-span-3">
             <Empty message="No partners match your filters." action={canEdit ? <Btn variant="primary" onClick={openCreate}>Add first partner</Btn> : undefined} />
           </div>

@@ -10,7 +10,7 @@ function confirmedAccountAcceptanceEmail(name: string): string {
     `<p>Hi ${firstName},</p>` +
       `<p>Congratulations! You've been accepted to Novus NYC.</p>` +
       `<p>You'll be assigned to a project within the next week. Your team, tasks, and project details are organized in the member portal — sign in at <a href="https://www.novusnyc.org/members">novusnyc.org/members</a>.</p>` +
-      `<p>Best,<br>Ethan Zhang<br>Novus NYC</p>`
+      `<p>Best,<br>Ethan<br>Novus NYC</p>`
   );
 }
 
@@ -29,7 +29,7 @@ export function buildConfirmedAccountAcceptanceTemplate(input: {
       "You'll be assigned to a project within the next week. Your team, tasks, and project details are organized in the member portal — sign in at https://www.novusnyc.org/members.",
       "",
       "Best,",
-      "Ethan Zhang",
+      "Ethan",
       "Novus NYC",
     ].join("\n"),
   };

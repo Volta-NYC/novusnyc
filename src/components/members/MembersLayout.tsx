@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { signOut } from "@/lib/members/supabaseAuth";
 import { useAuth } from "@/lib/members/authContext";
+import { useChapterScope, homePath } from "@/lib/members/chapterScope";
 import { type AuthRole, subscribeSiteSettings } from "@/lib/members/storage";
 import { supabase } from "@/lib/supabaseClient";
 import { Modal } from "@/components/members/ui";
@@ -30,11 +31,6 @@ type NavItem = {
 // ── NAV ITEM LIST ─────────────────────────────────────────────────────────────
 
 const OWNER_NAV_ITEMS: NavItem[] = [
-  {
-    href: "/members/overview",
-    label: "Dashboard",
-    icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  },
   {
     href: "/members/projects",
     label: "Tech Projects",
@@ -66,7 +62,7 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/members/email",
-    label: "Email",
+    label: "Emails",
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>,
   },
   {
@@ -76,14 +72,13 @@ const OWNER_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const ADMIN_NAV_HREFS = new Set(["/members/overview", "/members/projects", "/members/pods", "/members/team", "/members/email"]);
+const ADMIN_NAV_HREFS = new Set(["/members/projects", "/members/pods", "/members/team", "/members/email"]);
 const ADMIN_NAV_ITEMS: NavItem[] = OWNER_NAV_ITEMS.filter((item) => ADMIN_NAV_HREFS.has(item.href));
 
 const MEMBER_NAV_ITEMS: NavItem[] = [
   {
     href: "/members/me",
     label: "Overview",
-    activeMatchRoots: ["/members/me", "/members/overview"],
     icon: <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   },
   {
@@ -107,6 +102,18 @@ const MEMBER_NAV_ITEMS: NavItem[] = [
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
+// Collapsed, the switcher has room for three letters. Cities people say out
+// loud as an abbreviation keep theirs; anything else takes its first three.
+const CHAPTER_ABBREVIATIONS: Record<string, string> = {
+  "new york": "NYC",
+  chicago: "CHI",
+};
+
+function chapterAbbreviation(chapter: { name: string; city?: string }): string {
+  const key = (chapter.city || chapter.name).trim().toLowerCase();
+  return CHAPTER_ABBREVIATIONS[key] ?? (chapter.city || chapter.name).slice(0, 3).toUpperCase();
+}
+
 function getInitials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -116,7 +123,7 @@ function getInitials(displayName: string): string {
 
 function getDefaultMembersPath(_role: AuthRole | null): string {
   if (_role === "member") return "/members/me";
-  return "/members/overview";
+  return "/members/projects";
 }
 
 const TECH_PROJECTS_ITEM = OWNER_NAV_ITEMS.find((i) => i.href === "/members/projects")!;
@@ -127,8 +134,8 @@ function getNavItemsForRole(role: AuthRole | null, isTechLead: boolean): NavItem
   if (role === "owner") return OWNER_NAV_ITEMS;
   if (role === "admin") return ADMIN_NAV_ITEMS;
   if (isTechLead) {
-    const [overview, ...rest] = MEMBER_NAV_ITEMS;
-    return [overview, TECH_PROJECTS_ITEM, ...rest];
+    const [ownPage, ...rest] = MEMBER_NAV_ITEMS;
+    return [ownPage, TECH_PROJECTS_ITEM, ...rest];
   }
   return MEMBER_NAV_ITEMS;
 }
@@ -137,7 +144,6 @@ function getAllowedRootsForRole(role: AuthRole | null, isTechLead: boolean): str
   if (role === "owner") {
     return [
       "/members/projects",
-      "/members/overview",
       "/members/pods",
       "/members/orgs",
       "/members/team",
@@ -148,7 +154,6 @@ function getAllowedRootsForRole(role: AuthRole | null, isTechLead: boolean): str
   }
   if (role === "admin") {
     return [
-      "/members/overview",
       "/members/projects",
       "/members/pods",
       "/members/team",
@@ -282,14 +287,22 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
   };
 
   const visibleNavItems = getNavItemsForRole(authRole, isTechLead);
+  const scope = useChapterScope();
+  // Route matching and permissions are written against the home chapter's
+  // paths, so a chapter namespace is stripped before either runs.
+  const homePathname = homePath(pathname, scope.chapters);
 
   useEffect(() => {
     if (loading || !user) return;
+    // Chapters arrive from the database, and until they do a namespaced path
+    // cannot be resolved back to its home path. Guarding early would bounce
+    // someone out of /members/chicago/... before the list loads.
+    if (scope.chapters.length === 0) return;
     const allowedRoots = getAllowedRootsForRole(authRole, isTechLead);
-    if (!isAllowedPath(pathname, allowedRoots)) {
-      router.replace(getDefaultMembersPath(authRole));
+    if (!isAllowedPath(homePathname, allowedRoots)) {
+      router.replace(scope.scopedHref(getDefaultMembersPath(authRole)));
     }
-  }, [authRole, isTechLead, loading, pathname, router, user]);
+  }, [authRole, homePathname, isTechLead, loading, router, scope, user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -485,16 +498,16 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
           {visibleNavItems.map((item) => {
             const matchRoots = item.activeMatchRoots?.length ? item.activeMatchRoots : [item.href];
             const inMatch = item.activeOnlyExact
-              ? pathname === item.href
-              : (pathname === item.href
-                  || matchRoots.some((root) => pathname === root || pathname.startsWith(`${root}/`))
-                  || (item.startWithRoots?.some((root) => pathname.startsWith(root)) ?? false));
-            const excluded = item.excludeMatchRoots?.some((root) => pathname === root || pathname.startsWith(`${root}/`)) ?? false;
+              ? homePathname === item.href
+              : (homePathname === item.href
+                  || matchRoots.some((root) => homePathname === root || homePathname.startsWith(`${root}/`))
+                  || (item.startWithRoots?.some((root) => homePathname.startsWith(root)) ?? false));
+            const excluded = item.excludeMatchRoots?.some((root) => homePathname === root || homePathname.startsWith(`${root}/`)) ?? false;
             const isActive = inMatch && !excluded;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={scope.scopedHref(item.href)}
                 onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? item.label : undefined}
                 aria-label={sidebarCollapsed ? item.label : undefined}
@@ -509,6 +522,38 @@ function MembersLayoutInner({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        {/* Chapter switcher. Two chapters are two portals; this is the only
+            door between them, and it stays out of the way at the bottom. */}
+        {scope.chapters.length > 1 && (
+          <div className={`px-2 pb-1 pt-2 border-t ${tone.sidebarBorder} shrink-0`}>
+            {!sidebarCollapsed && (
+              <p className={`px-1 pb-1 text-[9px] uppercase tracking-wider ${tone.userRole}`}>Chapter</p>
+            )}
+            <div className={sidebarCollapsed ? "space-y-0.5" : "flex gap-1"}>
+              {scope.chapters.map((chapter, index) => {
+                const href = index === 0
+                  ? homePathname
+                  : `/members/${chapter.slug}${homePathname.slice("/members".length)}`;
+                const isCurrent = chapter.id === scope.chapterId;
+                return (
+                  <Link
+                    key={chapter.id}
+                    href={href}
+                    onClick={() => setSidebarOpen(false)}
+                    title={sidebarCollapsed ? chapter.name : undefined}
+                    aria-current={isCurrent ? "true" : undefined}
+                    className={`flex-1 rounded-md px-2 py-1 text-center text-[11px] font-body transition-colors ${
+                      isCurrent ? tone.navActive : tone.navInactive
+                    }`}
+                  >
+                    {sidebarCollapsed ? chapterAbbreviation(chapter) : chapter.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* User / footer */}
         <div className={`p-2 border-t ${tone.sidebarBorder} space-y-0.5 shrink-0`}>

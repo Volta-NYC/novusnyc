@@ -49,10 +49,10 @@ export function getDefaultReplyToAddress(fromAddress: string): string {
 /**
  * Addresses this deployment may send from.
  *
- * Every one must be a verified "Send mail as" alias on the Gmail account in
- * SMTP_USER. Gmail rejects an unverified sender outright rather than falling
- * back to the account address, so an address that is listed here but not
- * verified there fails at send time.
+ * The Workspace SMTP relay is configured to accept any address in the domain,
+ * so this list is a deliberate shortlist rather than a technical limit. Google
+ * DKIM-signs with the domain of the authenticated Workspace account, which is
+ * what keeps these aligned for DMARC.
  */
 export function getAllowedFromAddresses(): string[] {
   return Array.from(
@@ -66,11 +66,13 @@ export function getAllowedFromAddresses(): string[] {
 }
 
 /**
- * One Gmail account sends for every address.
+ * One Workspace account relays for every address.
  *
- * Gmail lets a single authenticated account send as any of its verified
- * aliases, so the four @novusnyc.org addresses need one credential pair
- * between them, not one each.
+ * Mail goes through Google Workspace's SMTP relay (smtp-relay.gmail.com:587,
+ * STARTTLS, SMTP auth), which accepts any sender in the domain. That is what
+ * lets one credential pair send as all four @novusnyc.org addresses without a
+ * "Send mail as" alias for each, and it is the supported path for application
+ * mail rather than a workaround.
  */
 export function resolveSmtpProfile(): {
   host: string;
@@ -96,15 +98,18 @@ export function resolveSmtpProfile(): {
     host: pickFirst(
       process.env.SMTP_HOST,
       process.env.INTERVIEW_EMAIL_SMTP_HOST,
-      "smtp.gmail.com",
+      "smtp-relay.gmail.com",
     ),
     port: parsePort(
       pickFirst(process.env.SMTP_PORT, process.env.INTERVIEW_EMAIL_SMTP_PORT),
-      465,
+      587,
     ),
+    // Port 587 is STARTTLS, not implicit TLS: `secure` stays false there and
+    // the connection is upgraded instead. requireTLS below makes the upgrade
+    // mandatory, so a downgrade fails the send rather than sending in clear.
     secure: parseBool(
       pickFirst(process.env.SMTP_SECURE, process.env.INTERVIEW_EMAIL_SMTP_SECURE),
-      true,
+      false,
     ),
     user,
     pass,
@@ -117,13 +122,44 @@ export function createTransportForFrom(fromAddress?: string) {
     throw new Error("sender_not_allowed");
   }
   const profile = resolveSmtpProfile();
-  const transporter = nodemailer.createTransport({
-    host: profile.host,
-    port: profile.port,
-    secure: profile.secure,
-    auth: { user: profile.user, pass: profile.pass },
-  });
+  const transporter = nodemailer.createTransport(
+    {
+      host: profile.host,
+      port: profile.port,
+      secure: profile.secure,
+      requireTLS: !profile.secure,
+      auth: { user: profile.user, pass: profile.pass },
+    },
+    {
+      // Defaults every message inherits. The envelope sender nodemailer derives
+      // from this From is what SPF checks, so header and envelope stay on the
+      // same domain and DMARC alignment holds.
+      from: resolveFromWithName(from),
+      replyTo: getDefaultReplyToAddress(from),
+      // RFC 3834: the portal never wants an out-of-office bounced back at it.
+      headers: { "Auto-Submitted": "auto-generated" },
+    },
+  );
   return { transporter, profile };
+}
+
+/** A readable plain-text part. A missing one reads as spam to most filters. */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|tr|h[1-6]|li)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, "\n\n")
+    .split("\n").map((line) => line.trim()).join("\n")
+    .trim();
 }
 
 /**

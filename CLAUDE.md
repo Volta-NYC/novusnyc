@@ -230,8 +230,15 @@ conditions must hold or messages are rejected, spam-filed, or fail DMARC:
    rejects an unverified sender outright rather than falling back to the
    account address.
 
-SPF is Google-only — `v=spf1 include:_spf.google.com ~all`. Do not re-add the
-Cloudflare include for this domain.
+Outbound uses the Workspace **SMTP relay** (`smtp-relay.gmail.com:587`,
+STARTTLS, SMTP auth), configured in the Admin console to accept any sender in
+the domain. That is why one credential pair sends as all four addresses, and
+why no per-address "Send mail as" alias is required. Port 587 is STARTTLS, so
+`SMTP_SECURE` stays false and `requireTLS` is on.
+
+SPF is Google-only — `v=spf1 include:_spf.google.com ~all`. DKIM is published
+at `google._domainkey`, and DMARC is `p=none` with `rua=mailto:dmarc@`. Do not
+re-add the Cloudflare include for this domain.
 
 Verify before adding an address:
 

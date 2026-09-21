@@ -39,3 +39,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 AGENTS.md
+
+# Supabase CLI update-check cache
+/supabase/.temp/cli-latest

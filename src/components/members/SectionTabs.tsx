@@ -73,8 +73,3 @@ export const APPLICANTS_GROUP_TABS: SectionTab[] = [
 ];
 
 // Email: compose + templates + automations.
-export const EMAIL_TABS: SectionTab[] = [
-  { href: "/members/email", label: "Compose", exact: true },
-  { href: "/members/email/templates", label: "Templates" },
-  { href: "/members/email/automations", label: "Automations" },
-];

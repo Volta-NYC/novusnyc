@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { AuthProvider } from "@/lib/members/authContext";
+import { ChapterScopeProvider } from "@/lib/members/chapterScope";
 
 // Wraps every /members/* page with AuthProvider so that useAuth() works
 // in page-level components, not only inside MembersLayout children.
@@ -18,7 +19,7 @@ export default function MembersRootLayout({ children }: { children: ReactNode })
           __html: `(function(){try{document.body.style.backgroundColor='#F5F6F8';}catch(e){}})();`,
         }}
       />
-      {children}
+      <ChapterScopeProvider>{children}</ChapterScopeProvider>
     </AuthProvider>
   );
 }
