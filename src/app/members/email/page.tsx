@@ -14,6 +14,7 @@ import {
   updateEmailTemplate,
   createEmailTemplate,
   deleteEmailTemplate,
+  deleteAutomationConfig,
   type AutomationConfig,
   type EmailTemplate,
 } from "@/lib/members/storage";
@@ -48,6 +49,34 @@ const TRIGGER_WITHOUT_AUTOMATION: Record<string, string> = {
 const SCHEDULED: Record<string, string> = {
   service_hours_summary: "On the January and July sweep",
 };
+
+// Templates the code falls back from rather than depends on: with the row
+// deleted, the portal still sends the email in its built-in wording.
+const BUILT_IN_FALLBACK = new Set([
+  "applicant_accepted", "invite", "setup-link", "password-reset",
+  "interview_confirmation", "interview_rescheduled",
+]);
+
+// Deleting a row does one of three different things depending on how that
+// email is sent, so the confirmation names which rather than a generic warning.
+function deleteConsequence(name: string, key: string): string {
+  if (key.startsWith("custom_")) return `${name} is deleted for good.`;
+  if (key.startsWith("acceptance_")) {
+    return `${name} is deleted for good. Accepting someone into that team will stop sending a welcome email.`;
+  }
+  if (BUILT_IN_FALLBACK.has(key)) {
+    return `${name} is deleted for good. The portal keeps sending this email in its built-in wording.`;
+  }
+  return `${name} is deleted for good, and the portal stops sending it.`;
+}
+
+// One grid on the list, with every row as a subgrid, so the toggle and button
+// columns are sized once for the whole list. Separate grids per row sized their
+// auto columns per row, which pushed the header out of line with the cells.
+// Below md there is no room for a name beside a switch and two buttons, so a
+// row wraps: the name takes its own line and the controls sit under it.
+const LIST_GRID = "md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,4fr)_auto_auto] md:gap-x-4";
+const ROW = "flex flex-wrap items-center gap-x-4 gap-y-2 md:col-span-full md:grid md:grid-cols-subgrid";
 
 export default function EmailPage() {
   const { authRole, user, loading } = useAuth();
@@ -209,43 +238,52 @@ export default function EmailPage() {
       {rows.length === 0 ? (
         <Empty message="No emails yet." />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-white/15">
+        <div className={`${LIST_GRID} overflow-hidden rounded-lg border border-white/15`}>
+          <div className="hidden border-b border-white/10 px-4 py-2 md:col-span-full md:grid md:grid-cols-subgrid">
+            <span className="text-[10px] uppercase tracking-wide text-white/40">Email</span>
+            <span className="text-[10px] uppercase tracking-wide text-white/40">Subject</span>
+            <span className="text-[10px] uppercase tracking-wide text-white/40">On</span>
+            <span />
+          </div>
           {rows.map((row) => (
             <div
               key={row.key}
-              className="flex items-center gap-4 border-b border-white/10 px-4 py-3 last:border-b-0 hover:bg-white/[0.03]"
+              className={`${ROW} border-b border-white/10 px-4 py-3 last:border-b-0 hover:bg-white/[0.03]`}
             >
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 basis-full md:basis-auto">
                 <p className="truncate text-[13px] font-medium text-white/90">{row.name}</p>
                 <p className="truncate text-[11px] text-white/45">
                   {row.trigger || "No trigger recorded"}
                   {row.scheduled && <span className="ml-2 text-white/30">scheduled</span>}
                 </p>
               </div>
-              <p className="hidden min-w-0 flex-1 truncate text-[11px] text-white/35 md:block" title={row.template?.subject ?? ""}>
+              <p className="hidden min-w-0 truncate text-[11px] text-white/45 md:block" title={row.template?.subject ?? ""}>
                 {row.template?.subject || "No subject yet"}
               </p>
-              <Toggle checked={row.on} onChange={(v) => void setOn(row, v)} label={`${row.name} on`} />
-              <Btn
-                variant="secondary"
-                size="sm"
-                disabled={!row.template}
-                onClick={() => row.template && openEditor(row.template)}
-              >
-                Edit wording
-              </Btn>
-              {row.template && row.template.key.startsWith("custom_") && (
+              <Toggle checked={row.on} onChange={(v) => void setOn(row, v)} ariaLabel={`Send ${row.name}`} />
+              <div className="ml-auto flex justify-end gap-2 md:ml-0">
                 <Btn
-                  variant="ghost"
+                  variant="secondary"
+                  size="sm"
+                  disabled={!row.template}
+                  onClick={() => row.template && openEditor(row.template)}
+                >
+                  Edit wording
+                </Btn>
+                <Btn
+                  variant="danger"
                   size="sm"
                   onClick={() => ask(
-                    async () => { await deleteEmailTemplate(row.template!.id); },
-                    `${row.name} is deleted for good.`,
+                    async () => {
+                      if (row.template) await deleteEmailTemplate(row.template.id);
+                      if (row.automation) await deleteAutomationConfig(row.automation.automationId);
+                    },
+                    deleteConsequence(row.name, row.template?.key ?? row.automation?.templateKey ?? ""),
                   )}
                 >
                   Delete
                 </Btn>
-              )}
+              </div>
             </div>
           ))}
         </div>

@@ -1027,17 +1027,20 @@ export function CopyButton({ text, label }: { text: string; label?: string }) {
 
 // ── TOGGLE ────────────────────────────────────────────────────────────────────
 
-export function Toggle({ checked, onChange, label }: {
+export function Toggle({ checked, onChange, label, ariaLabel }: {
   checked: boolean;
   onChange: (v: boolean) => void;
   label?: string;
+  // Names the switch for screen readers without printing text beside it, for
+  // rows where the row itself already says what the switch controls.
+  ariaLabel?: string;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      aria-label={label ? undefined : "Toggle setting"}
+      aria-label={ariaLabel ?? (label ? undefined : "Toggle setting")}
       onClick={() => onChange(!checked)}
       className={`group inline-flex w-fit select-none items-center focus-visible:outline-none ${label ? "gap-3" : ""}`}
     >

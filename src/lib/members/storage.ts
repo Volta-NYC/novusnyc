@@ -1365,6 +1365,12 @@ export async function deleteEmailTemplate(id: string): Promise<void> {
 
 // ── Automation configs ────────────────────────────────────────────────────────
 
+export async function deleteAutomationConfig(automationId: string): Promise<void> {
+  const { error } = await supabase.from("automation_configs").delete().eq("automation_id", automationId);
+  if (error) throw new Error(error.message);
+  await writeAuditLog({ action: "delete", collection: "automationConfigs", recordId: automationId });
+}
+
 export async function updateAutomationConfig(automationId: string, patch: {
   templateKey?: string | null;
   enabled?: boolean;
