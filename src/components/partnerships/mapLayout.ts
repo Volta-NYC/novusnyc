@@ -10,7 +10,26 @@ export const LABEL_SIZE = 14;
 const OUTER = { rx: 470, ry: 320 };
 const SECTOR_GAP_UNITS = 1;
 const MIN_SECTOR_UNITS = 2;
-const CHAR_WIDTH = 0.56;
+// Advance widths of DM Sans at weight 600, in ems, measured from the loaded
+// font and rounded up. Summed along a line they predict its rendered length to
+// within a few units and never short. The flat 0.56 per character this replaced
+// over-counted most names by 10 to 20 units, so labels that fit side by side
+// were judged to collide and got pushed out of line, which is what made the
+// Brooklyn run uneven. Labels use 500 and 600; the heavier weight keeps the
+// estimate safe.
+const GLYPH_EM: Record<string, number> = {
+  A: 0.7, B: 0.63, C: 0.74, D: 0.71, E: 0.58, F: 0.55, G: 0.78, H: 0.71, I: 0.27, J: 0.53, K: 0.64, L: 0.55, M: 0.88, N: 0.72, O: 0.79, P: 0.61, Q: 0.79, R: 0.62, S: 0.6, T: 0.59, U: 0.68, V: 0.7, W: 1.01, X: 0.66, Y: 0.62, Z: 0.57,
+  a: 0.58, b: 0.65, c: 0.6, d: 0.65, e: 0.6, f: 0.37, g: 0.59, h: 0.61, i: 0.27, j: 0.27, k: 0.56, l: 0.26, m: 0.93, n: 0.61, o: 0.61, p: 0.65, q: 0.65, r: 0.4, s: 0.53, t: 0.43, u: 0.61, v: 0.56, w: 0.81, x: 0.55, y: 0.59, z: 0.49,
+  "0": 0.7, "1": 0.35, "2": 0.58, "3": 0.6, "4": 0.64, "5": 0.62, "6": 0.64, "7": 0.54, "8": 0.63, "9": 0.64,
+  " ": 0.25, "&": 0.77, "'": 0.19, "’": 0.25, "-": 0.57, ".": 0.24, ",": 0.23, "/": 0.42, "(": 0.4, ")": 0.4,
+};
+// Wider than any measured glyph, so a character the table has not seen can
+// only make a label look bigger than it is, never smaller.
+const UNKNOWN_GLYPH_EM = 1.1;
+// Space held between two labels on top of their own padding. The old width
+// estimate supplied this by accident; with accurate widths it has to be asked for.
+const LABEL_CLEARANCE = 4;
+const SECTOR_LABEL_SIZE = 11;
 
 // Clockwise from the top, loosely following the city: the Bronx north, Queens
 // east, Brooklyn south, Staten Island southwest, Manhattan west.
@@ -181,7 +200,8 @@ function placeLabel(node: Circle, angle: number, text: string, stagger = 0): Lab
 }
 
 function textBox(x: number, baseline: number, anchor: "start" | "middle" | "end", lines: string[], fontSize: number, pad = 2): Box {
-  const width = Math.max(...lines.map((line) => line.length)) * fontSize * CHAR_WIDTH;
+  const width = Math.max(...lines.map((line) =>
+    [...line].reduce((em, ch) => em + (GLYPH_EM[ch] ?? UNKNOWN_GLYPH_EM), 0) * fontSize));
   const top = baseline - fontSize * 0.9;
   const height = lines.length * fontSize * 1.2;
   const x0 = anchor === "start" ? x : anchor === "end" ? x - width : x - width / 2;
@@ -190,6 +210,20 @@ function textBox(x: number, baseline: number, anchor: "start" | "middle" | "end"
 
 function labelBox(label: LabelLayout): Box {
   return textBox(label.x, label.y, label.anchor, label.lines, label.fontSize);
+}
+
+function inflate(box: Box, by: number): Box {
+  return { x0: box.x0 - by, y0: box.y0 - by, x1: box.x1 + by, y1: box.y1 + by };
+}
+
+// Sector names are text too. Without boxes of their own, a label dropped a row
+// could land on "BROOKLYN". Bold uppercase at 0.2em tracking runs about 0.95em
+// a character; the two edge sectors are turned a quarter and run vertically.
+function sectorBox(label: SectorLabel): Box {
+  const half = (label.sector.length * SECTOR_LABEL_SIZE * 0.95) / 2;
+  return label.rotate
+    ? { x0: label.x - SECTOR_LABEL_SIZE, y0: label.y - half, x1: label.x + SECTOR_LABEL_SIZE, y1: label.y + half }
+    : { x0: label.x - half, y0: label.y - SECTOR_LABEL_SIZE, x1: label.x + half, y1: label.y + 4 };
 }
 
 function circleBox(circle: Circle): Box {
@@ -293,6 +327,7 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
   const occupied: { id: string; box: Box }[] = [
     { id: "novus", box: circleBox({ ...CENTER, r: NOVUS_RADIUS + 26 }) },
     ...nodes.map((node) => ({ id: node.id, box: circleBox(node) })),
+    ...sectorLabels.map((label) => ({ id: `sector-${label.sector}`, box: sectorBox(label) })),
   ];
   const labelOrder = [...nodes].sort((a, b) => (depthOf.get(a.id) === "deep" ? 0 : 1) - (depthOf.get(b.id) === "deep" ? 0 : 1));
   const nameOf = new Map(partners.map((partner) => [partner.id, partner.shortName]));
@@ -315,7 +350,10 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
       ...(sectorOf.get(node.id) === "Brooklyn"
         ? [
             belowBrooklyn,
-            ...[-40, -24, -16, -8, 8, 16, 24, 40].map((offset) => ({ ...belowBrooklyn, x: belowBrooklyn.x + offset })),
+            // Smallest nudge first, so a label moves only as far off its circle
+            // as it has to. Trying 40 first sent labels the full distance
+            // whenever that slot happened to be free.
+            ...[-8, 8, -16, 16, -24, 24, -40, 40].map((offset) => ({ ...belowBrooklyn, x: belowBrooklyn.x + offset })),
             ...[22, 44].map((offset) => ({ ...belowBrooklyn, y: belowBrooklyn.y + offset })),
           ]
         : []),
@@ -325,7 +363,7 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
     ].find(fits);
     if (placed) node.label = placed;
     node.label.visible = deep || Boolean(placed);
-    if (node.label.visible) occupied.push({ id: `${node.id}-label`, box: labelBox(node.label) });
+    if (node.label.visible) occupied.push({ id: `${node.id}-label`, box: inflate(labelBox(node.label), LABEL_CLEARANCE) });
   }
 
   const edges: EdgeLayout[] = nodes.map((node) => {
