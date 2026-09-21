@@ -12,15 +12,11 @@ import { loadEmailTemplate } from "@/lib/server/emailTemplates";
 export const runtime = "nodejs";
 
 const DEFAULT_SUBJECT = "Reset your Novus NYC password";
-const DEFAULT_HTML = `  
-<p>Hi {{firstName}},</p>
-<p>We received a request to reset the password for your Novus NYC member portal account. Click the button below to choose a new password.</p>
-<p>
-<a href="{{link}}">Reset Password</a>
-    </p>
-<p><em>This link expires in 1 hour and can only be used once. If you did not request a password reset, you can safely ignore this email.</em></p>
-<p>Best,<br>Ethan Zhang</p>
-`;
+const DEFAULT_HTML = `<p>Hi {{firstName}},</p>
+<p>We received a request to reset the password for your Novus NYC member portal account. Use the link below to choose a new one.</p>
+<p><a href="{{link}}">Reset your password</a></p>
+<p>This link expires in 1 hour and can only be used once. If you didn't request a password reset, you can ignore this email.</p>
+<p>Best,<br>Ethan<br>Novus NYC</p>`;
 
 function siteOrigin(req: NextRequest): string {
   const host = req.headers.get("host") ?? "www.novusnyc.org";
@@ -72,7 +68,7 @@ export async function POST(req: NextRequest) {
     { subject: DEFAULT_SUBJECT, html: DEFAULT_HTML },
   );
 
-  const text = `Hi ${firstName},\n\nClick the link below to reset your Novus NYC member portal password:\n${link}\n\nThis link expires in 1 hour. If you didn't request a reset, ignore this email.\n\n— Novus NYC`;
+  const text = `Hi ${firstName},\n\nClick the link below to reset your Novus NYC member portal password:\n${link}\n\nThis link expires in 1 hour. If you didn't request a reset, ignore this email.\n\nBest,\nEthan\nNovus NYC`;
 
   const from = getDefaultFromAddress();
   const { transporter } = createTransportForFrom(from);

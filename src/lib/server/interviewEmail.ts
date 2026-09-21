@@ -181,7 +181,7 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
         A calendar invite (<code>.ics</code>) is attached to this email.
       </p>
       <p>If you need to reschedule, reply to this email and we&apos;ll sort it out.<br/><br/>We look forward to speaking with you.</p>
-      <p>Best,<br/>Ethan Zhang</p>
+      <p>Best,<br>Ethan<br>Novus NYC</p>
     `;
 
   await sendInterviewEmail({
@@ -202,7 +202,8 @@ export async function sendInterviewBookingEmail(input: BookingEmailInput): Promi
       "We look forward to speaking with you.",
       "",
       "Best,",
-      "Ethan Zhang",
+      "Ethan",
+      "Novus NYC",
     ].join("\n"),
     html,
     ics: {
@@ -242,7 +243,7 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
         A fresh calendar invite (<code>.ics</code>) is attached.
       </p>
       <p>If you need to reschedule again, reply to this email and we&apos;ll sort it out.<br/><br/>We look forward to speaking with you.</p>
-      <p>Best,<br/>Ethan Zhang</p>
+      <p>Best,<br>Ethan<br>Novus NYC</p>
     `;
 
   await sendInterviewEmail({
@@ -264,7 +265,8 @@ export async function sendInterviewRescheduledEmail(input: BookingEmailInput & {
       "We look forward to speaking with you.",
       "",
       "Best,",
-      "Ethan Zhang",
+      "Ethan",
+      "Novus NYC",
     ].join("\n"),
     html,
     ics: {

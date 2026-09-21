@@ -32,7 +32,7 @@ const DEFAULT_ACCEPTED_HTML = `<p>Hi {{firstName}},</p>
 <p>Use the link below to set up your member portal account:</p>
 <p><a href="{{link}}">Set up your account</a></p>
 <p>You'll be taken to a page where you can request a secure setup link. The link can be re-requested at any time, so this email doesn't expire.</p>
-<p>Best,<br>Ethan</p>`;
+<p>Best,<br>Ethan<br>Novus NYC</p>`;
 
 export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner"]);
@@ -142,14 +142,14 @@ export async function POST(req: NextRequest) {
       "",
       "Congratulations! You've been accepted to Novus NYC.",
       "",
-      "Click the link below to set up your member portal account:",
+      "Use the link below to set up your member portal account:",
       signupUrl,
       "",
       "You'll be taken to a page where you can request a secure setup link.",
       "The link can be re-requested at any time, so this email doesn't expire.",
       "",
       "Best,",
-      "Ethan Zhang",
+      "Ethan",
       "Novus NYC",
     ].join("\n");
 

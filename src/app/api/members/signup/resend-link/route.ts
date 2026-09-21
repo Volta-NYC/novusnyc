@@ -18,11 +18,11 @@ function siteOrigin(req: NextRequest): string {
 }
 
 const DEFAULT_SETUP_SUBJECT = "Your Novus NYC portal setup link";
-const DEFAULT_SETUP_HTML = `    <h2>Your portal setup link</h2>
-<p>Hi {{firstName}}, click below to set up your Novus NYC member portal account.</p>
-<a href="{{link}}">Set Up Account</a>
-<p>This link expires in 24 hours and can only be used once. If it expires, <a href="{{signupUrl}}">click here</a> to request a new one.<br>If you didn't request this, you can safely ignore it.</p>
-`;
+const DEFAULT_SETUP_HTML = `<p>Hi {{firstName}},</p>
+<p>Here is your link to set up your Novus NYC member portal account:</p>
+<p><a href="{{link}}">Set up your account</a></p>
+<p>This link expires in 24 hours and can only be used once. If it expires, you can <a href="{{signupUrl}}">request a new one</a>. If you didn't request this, you can ignore it.</p>
+<p>Best,<br>Ethan<br>Novus NYC</p>`;
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     { subject: DEFAULT_SETUP_SUBJECT, html: DEFAULT_SETUP_HTML }
   );
 
-  const text = `Hi ${firstName},\n\nHere is your link to set up your Novus NYC member portal account:\n${link}\n\nThis link expires in 24 hours and can only be used once.\nIf you didn't request this, you can safely ignore it.\n\n— Novus NYC`;
+  const text = `Hi ${firstName},\n\nHere is your link to set up your Novus NYC member portal account:\n${link}\n\nThis link expires in 24 hours and can only be used once.\nIf you didn't request this, you can safely ignore it.\n\nBest,\nEthan\nNovus NYC`;
 
   const from = getDefaultFromAddress();
   const { transporter } = createTransportForFrom(from);

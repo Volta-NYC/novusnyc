@@ -18,11 +18,11 @@ function siteOrigin(req: NextRequest): string {
 }
 
 const DEFAULT_INVITE_SUBJECT = "Set up your Novus NYC member portal account";
-const DEFAULT_INVITE_HTML = `    <h2>Set up your member portal account</h2>
-<p>Hi {{firstName}}, you've been invited to join the Novus NYC member portal.</p>
-<a href="{{link}}">Set Up Account</a>
-<p>If you didn't expect this email, you can safely ignore it.</p>
-`;
+const DEFAULT_INVITE_HTML = `<p>Hi {{firstName}},</p>
+<p>You've been invited to join the Novus NYC member portal.</p>
+<p><a href="{{link}}">Set up your account</a></p>
+<p>If you didn't expect this email, you can ignore it.</p>
+<p>Best,<br>Ethan<br>Novus NYC</p>`;
 
 export async function POST(req: NextRequest) {
   const verified = await verifyCaller(req, ["owner"]);
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     { subject: DEFAULT_INVITE_SUBJECT, html: DEFAULT_INVITE_HTML }
   );
 
-  const text = `Hi ${firstName},\n\nYou've been invited to set up your account on the Novus NYC member portal.\n\n${link}\n\nIf you didn't expect this email, you can safely ignore it.\n\n— Novus NYC`;
+  const text = `Hi ${firstName},\n\nYou've been invited to set up your account on the Novus NYC member portal.\n\n${link}\n\nIf you didn't expect this email, you can safely ignore it.\n\nBest,\nEthan\nNovus NYC`;
 
   try {
     const from = getDefaultFromAddress();
