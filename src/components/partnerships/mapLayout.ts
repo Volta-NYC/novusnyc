@@ -288,6 +288,7 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
 
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const depthOf = new Map(partners.map((partner) => [partner.id, partner.depth]));
+  const sectorOf = new Map(partners.map((partner) => [partner.id, partner.sector]));
 
   const occupied: { id: string; box: Box }[] = [
     { id: "novus", box: circleBox({ ...CENTER, r: NOVUS_RADIUS + 26 }) },
@@ -306,7 +307,18 @@ export function computeLayout(partners: LayoutInput[]): MapLayout {
     // Crowded labels try a slight turn first, then dropping a row below their
     // neighbors' labels.
     const name = nameOf.get(node.id) ?? "";
+    const belowBrooklyn = placeLabel(node, 90, name);
     const placed = [
+      // Brooklyn is the bottom arc of the ring. Keeping this run underneath
+      // its circles makes the gaps between the labels feel deliberate instead
+      // of switching from side labels to underneath labels midway through it.
+      ...(sectorOf.get(node.id) === "Brooklyn"
+        ? [
+            belowBrooklyn,
+            ...[-40, -24, -16, -8, 8, 16, 24, 40].map((offset) => ({ ...belowBrooklyn, x: belowBrooklyn.x + offset })),
+            ...[22, 44].map((offset) => ({ ...belowBrooklyn, y: belowBrooklyn.y + offset })),
+          ]
+        : []),
       node.label,
       ...[-22, 22, -40, 40].map((turn) => placeLabel(node, node.angle + turn, name)),
       ...[0, -8, 8].map((turn) => placeLabel(node, node.angle + turn, name, LABEL_SIZE * 2.6)),
