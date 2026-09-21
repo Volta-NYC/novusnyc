@@ -17,17 +17,26 @@ import { useAuth } from "@/lib/members/authContext";
 import ProjectPanel, { type ProjectPanelFocus } from "./ProjectPanel";
 import PublicCardOrderModal from "./PublicCardOrderModal";
 
-// The doc's tabs, as filters over one list. Each is a question the tech team
-// actually asks: what's live, what needs assigning, what's mine.
-type ViewKey = "all" | "domains" | "backlog" | "leads" | "hold";
+// Two populations, not one list with a filter. Untriaged intake arrives at
+// Backlog from the public form and is a queue to work through; everything past
+// that status is live work. They are read at different times for different
+// reasons, so they get tabs rather than a pill someone has to remember to click.
+type TabKey = "active" | "backlog";
+
+// Refinements within Active. Backlog has none: every row there is the same
+// status by definition, so a status filter over it would be a no-op.
+type ViewKey = "all" | "domains" | "leads" | "hold";
 
 const VIEWS: { key: ViewKey; label: string }[] = [
   { key: "all",     label: "All" },
   { key: "domains", label: "Real Domains" },
-  { key: "backlog", label: "Backlog" },
   { key: "leads",   label: "Leads" },
   { key: "hold",    label: "On Hold" },
 ];
+
+function isBacklog(b: Business): boolean {
+  return (b.techStatus ?? "Backlog") === "Backlog";
+}
 
 const PRIORITY_RANK: Record<string, number> = { High: 0, Medium: 1, Maybe: 2 };
 
@@ -119,6 +128,9 @@ function ProjectsPageInner() {
   // retired /members/projects/discovery route has somewhere real to land.
   const searchParams = useSearchParams();
   const requestedView = searchParams.get("view");
+  // ?view=backlog predates the tab split and is still in circulation, so it
+  // opens the tab it used to name rather than 404ing into Active.
+  const [tab, setTab]               = useState<TabKey>(requestedView === "backlog" ? "backlog" : "active");
   const [view, setView]             = useState<ViewKey>(
     VIEWS.some((v) => v.key === requestedView) ? (requestedView as ViewKey) : "all",
   );
@@ -163,15 +175,19 @@ function ProjectsPageInner() {
     let list = businesses.filter((b) => !b.archived);
     if (chapterId) list = list.filter((b) => (b.chapterId ?? defaultChapterId) === chapterId);
 
-    switch (view) {
-      case "domains": list = list.filter((b) => !!b.liveUrl); break;
-      case "backlog": list = list.filter((b) => b.techStatus === "Backlog" && !isLead(b)); break;
-      case "leads":   list = list.filter(isLead); break;
-      case "hold":    list = list.filter((b) => b.techStatus === "On Hold" || b.techStatus === "Dropped"); break;
-      default:        list = list.filter((b) => !isLead(b));
+    if (tab === "backlog") {
+      list = list.filter(isBacklog);
+    } else {
+      // A lead that has been triaged is ordinary work, so it belongs here
+      // rather than staying hidden behind the Leads pill as it used to.
+      list = list.filter((b) => !isBacklog(b));
+      switch (view) {
+        case "domains": list = list.filter((b) => !!b.liveUrl); break;
+        case "leads":   list = list.filter(isLead); break;
+        case "hold":    list = list.filter((b) => b.techStatus === "On Hold" || b.techStatus === "Dropped"); break;
+      }
+      if (statusFilter.size > 0) list = list.filter((b) => statusFilter.has(b.techStatus ?? "Backlog"));
     }
-
-    if (statusFilter.size > 0) list = list.filter((b) => statusFilter.has(b.techStatus ?? "Backlog"));
 
     if (q) {
       list = list.filter((b) =>
@@ -183,7 +199,8 @@ function ProjectsPageInner() {
         [b.liveUrl, b.previewUrl, b.clientUrl].some((u) => (u ?? "").toLowerCase().includes(q)));
     }
 
-    if (view === "backlog") {
+    // A queue sorts by what to pick up next; live work sorts by what moved last.
+    if (tab === "backlog") {
       return [...list].sort((a, b) =>
         (PRIORITY_RANK[a.techPriority ?? "Medium"] ?? 1) - (PRIORITY_RANK[b.techPriority ?? "Medium"] ?? 1)
         || a.name.localeCompare(b.name));
@@ -191,17 +208,28 @@ function ProjectsPageInner() {
     return [...list].sort((a, b) =>
       (b.lastTouchedAt ?? b.updatedAt ?? "").localeCompare(a.lastTouchedAt ?? a.updatedAt ?? "")
       || a.name.localeCompare(b.name));
-  }, [businesses, view, search, nameById, statusFilter, chapterId, defaultChapterId]);
+  }, [businesses, tab, view, search, nameById, statusFilter, chapterId, defaultChapterId]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     for (const s of TECH_STATUSES) c[s] = 0;
     for (const b of businesses ?? []) {
-      if (b.archived || isLead(b)) continue;
+      if (b.archived) continue;
       if (chapterId && (b.chapterId ?? defaultChapterId) !== chapterId) continue;
       c[b.techStatus ?? "Backlog"] = (c[b.techStatus ?? "Backlog"] ?? 0) + 1;
     }
     return c;
+  }, [businesses, chapterId, defaultChapterId]);
+
+  const tabCounts = useMemo(() => {
+    let active = 0;
+    let backlog = 0;
+    for (const b of businesses ?? []) {
+      if (b.archived) continue;
+      if (chapterId && (b.chapterId ?? defaultChapterId) !== chapterId) continue;
+      if (isBacklog(b)) backlog += 1; else active += 1;
+    }
+    return { active, backlog };
   }, [businesses, chapterId, defaultChapterId]);
 
   const open = businesses?.find((b) => b.id === openId) ?? null;
@@ -487,10 +515,43 @@ function ProjectsPageInner() {
         </div>
       </Modal>
 
+      {/* Styled to match SectionTabs so the portal has one tab idiom, but held
+          in state rather than the URL: this splits one list, it is not a route. */}
+      <div className="mb-4 overflow-x-auto pb-1">
+        <div className="inline-flex min-w-max items-center gap-1 rounded-xl border border-black/10 bg-black/[0.04] p-1">
+          {([
+            { key: "active",  label: "Active",  count: tabCounts.active },
+            { key: "backlog", label: "Backlog", count: tabCounts.backlog },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              aria-current={tab === t.key ? "page" : undefined}
+              onClick={() => { setTab(t.key); setView("all"); setStatusFilter(new Set()); }}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+                tab === t.key
+                  ? "border border-[#F6B78D]/30 bg-[#F6B78D]/15 text-[#8B5E48]"
+                  : "border border-transparent text-black/55 hover:bg-black/5 hover:text-black/85"
+              }`}
+            >
+              {t.label}
+              <span className="ml-1.5 font-mono tabular-nums opacity-60">{t.count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === "backlog" && (
+        <p className="mb-3 px-1 text-[11px] text-white/45">
+          Website form submissions still at Backlog. Moving one to Assigned or beyond files it under Active.
+        </p>
+      )}
+
       {/* The pipeline doubles as the filter, so each tier carries its own
-          colour — a row of plain numbers gave no sign it could be clicked. */}
+          colour — a row of plain numbers gave no sign it could be clicked.
+          Backlog is omitted: it is the other tab, not a filter within this one. */}
+      {tab === "active" && (
       <div className="mb-4 flex flex-wrap items-center gap-2 px-1">
-        {TECH_PIPELINE.map((st) => {
+        {TECH_PIPELINE.filter((st) => st !== "Backlog").map((st) => {
           const on = statusFilter.has(st);
           return (
             <button
@@ -520,14 +581,18 @@ function ProjectsPageInner() {
           </button>
         )}
       </div>
+      )}
 
       {chapters.length > 1 && (
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-[10px] uppercase tracking-wide text-white/35">Clients in</span>
           {[{ id: null, name: "All" }, ...[...chapters].sort((a, b) => a.sortOrder - b.sortOrder)].map((c) => {
+            // Counts follow the tab, or switching tabs leaves numbers that
+            // disagree with the rows underneath them.
+            const inTab = (b: Business) => (tab === "backlog" ? isBacklog(b) : !isBacklog(b));
             const count = c.id === null
-              ? (businesses ?? []).filter((b) => !b.archived && !isLead(b)).length
-              : (businesses ?? []).filter((b) => !b.archived && !isLead(b) && (b.chapterId ?? defaultChapterId) === c.id).length;
+              ? (businesses ?? []).filter((b) => !b.archived && inTab(b)).length
+              : (businesses ?? []).filter((b) => !b.archived && inTab(b) && (b.chapterId ?? defaultChapterId) === c.id).length;
             return (
               <button
                 key={c.id ?? "all"}
@@ -568,7 +633,7 @@ function ProjectsPageInner() {
       {publicError && <p role="alert" className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{publicError}</p>}
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        {VIEWS.map((v) => (
+        {tab === "active" && VIEWS.map((v) => (
           <button
             key={v.key}
             onClick={() => { setView(v.key); setStatusFilter(new Set()); }}
@@ -591,7 +656,9 @@ function ProjectsPageInner() {
       ) : businesses === null ? (
         <SkeletonRows rows={12} cols={5} />
       ) : rows.length === 0 ? (
-        <Empty message={`Nothing in ${VIEWS.find((v) => v.key === view)?.label}.`} />
+        <Empty message={tab === "backlog"
+          ? "Nothing in Backlog."
+          : `Nothing in Active${view === "all" ? "" : ` · ${VIEWS.find((v) => v.key === view)?.label}`}.`} />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-white/15">
           <table className={`w-full table-fixed border-collapse ${canPublish ? "min-w-[1080px]" : "min-w-[880px]"}`}>
