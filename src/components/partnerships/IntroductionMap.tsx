@@ -256,6 +256,9 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
                 </g>
               );
             }
+            // Two dozen arrowheads at rest read as clutter, and the direction
+            // of an introduction only matters once a reader picks one out.
+            const directed = Boolean(focusedId) && (edge.from === focusedId || edge.to === focusedId);
             return (
               <g key={edge.key} className={fade} style={{ opacity: edgeOpacity(edge) }}>
                 <path
@@ -270,6 +273,8 @@ export default function IntroductionMap({ partners }: { partners: PublicPartners
                   <path
                     d={edge.arrow}
                     fill={PEACH}
+                    className={fade}
+                    style={{ opacity: directed ? 1 : 0 }}
                   />
                 )}
               </g>
