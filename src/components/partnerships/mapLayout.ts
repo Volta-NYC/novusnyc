@@ -266,7 +266,9 @@ function chord(from: NodeLayout, to: NodeLayout) {
   const heading = unit(quadraticPoint(start, control, tip, 0.9), tip);
   const base = { x: tip.x - heading.x * 15, y: tip.y - heading.y * 15 };
   const perp = { x: -heading.y, y: heading.x };
-  const d = `M${start.x.toFixed(1)},${start.y.toFixed(1)} Q${control.x.toFixed(1)},${control.y.toFixed(1)} ${base.x.toFixed(1)},${base.y.toFixed(1)}`;
+  // The curve runs the whole way to the tip. It used to stop at the arrowhead's
+  // base, which only looked right while every head was drawn.
+  const d = `M${start.x.toFixed(1)},${start.y.toFixed(1)} Q${control.x.toFixed(1)},${control.y.toFixed(1)} ${tip.x.toFixed(1)},${tip.y.toFixed(1)}`;
   const arrow = `M${tip.x.toFixed(1)},${tip.y.toFixed(1)} L${(base.x + perp.x * 7).toFixed(1)},${(base.y + perp.y * 7).toFixed(1)} L${(base.x - perp.x * 7).toFixed(1)},${(base.y - perp.y * 7).toFixed(1)} Z`;
   return { d, arrow };
 }
