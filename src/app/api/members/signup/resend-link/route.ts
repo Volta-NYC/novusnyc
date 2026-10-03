@@ -3,14 +3,9 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
 import { createTransportForFrom, getDefaultFromAddress } from "@/lib/server/smtp";
 import { renderEmail } from "@/lib/server/templateRenderer";
+import { authRedirectOrigin } from "@/lib/server/authRedirect";
 
 export const runtime = "nodejs";
-
-function siteOrigin(req: NextRequest): string {
-  const host = req.headers.get("host") ?? "www.novusnyc.org";
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
-}
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);
@@ -53,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   const name      = String(member.name ?? email);
   const firstName = name.split(" ")[0] || name;
-  const origin    = siteOrigin(req);
+  const origin    = authRedirectOrigin(req);
   const redirectTo = `${origin}/members/signup?email=${encodeURIComponent(email)}`;
 
   const { data: inviteData, error: inviteErr } = await sb.auth.admin.generateLink({

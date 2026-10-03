@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Spinner, Btn, PasswordInput } from "@/components/members/ui";
+import { describePasswordError } from "@/lib/members/authErrors";
 
 type Phase =
   | "waiting"   // detecting session / hash
@@ -141,17 +142,16 @@ export default function SignupPage() {
         if (completeErr === "team_member_not_found") {
           throw new Error("Your account is not in the member directory. Contact an admin.");
         }
+        throw new Error("Your password was saved, but linking it to the member directory failed. Try again, or contact an admin.");
       }
 
       router.replace("/members");
     } catch (err: unknown) {
       const msg = (err as { message?: string })?.message ?? "";
-      if (msg.includes("weak") || msg.includes("Password should be")) {
-        setFormError("Password is too weak. Use at least 8 characters.");
-      } else if (msg.includes("member directory")) {
+      if (msg.includes("member directory")) {
         setFormError(msg);
       } else {
-        setFormError("Account setup failed. Please try again or contact an admin.");
+        setFormError(describePasswordError(err) || "Account setup failed. Please try again or contact an admin.");
       }
       setFormLoading(false);
     }

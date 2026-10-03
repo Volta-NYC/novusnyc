@@ -3,14 +3,9 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { consumeRateLimit, getClientIp } from "@/lib/server/rateLimit";
 import { createTransportForFrom, getDefaultFromAddress } from "@/lib/server/smtp";
 import { renderEmail } from "@/lib/server/templateRenderer";
+import { authRedirectOrigin } from "@/lib/server/authRedirect";
 
 export const runtime = "nodejs";
-
-function siteOrigin(req: NextRequest): string {
-  const host = req.headers.get("host") ?? "www.novusnyc.org";
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  return `${proto}://${host}`;
-}
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);
@@ -31,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!ready.ok) return NextResponse.json({ error: "email_not_set_up" }, { status: 500 });
 
   const sb = getSupabaseAdmin();
-  const redirectTo = `${siteOrigin(req)}/members/reset-password`;
+  const redirectTo = `${authRedirectOrigin(req)}/members/reset-password`;
 
   const { data: linkData, error: linkErr } = await sb.auth.admin.generateLink({
     type: "recovery",

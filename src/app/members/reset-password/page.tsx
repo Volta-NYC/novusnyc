@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { signOut } from "@/lib/members/supabaseAuth";
 import { Spinner, Btn, PasswordInput } from "@/components/members/ui";
+import { describePasswordError } from "@/lib/members/authErrors";
 
 type Phase = "waiting" | "form" | "invalid";
 
@@ -61,12 +62,7 @@ export default function ResetPasswordPage() {
       await signOut();
       router.replace("/members/login?reset=1");
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message ?? "";
-      if (msg.includes("weak") || msg.includes("Password should be")) {
-        setError("Password is too weak. Use at least 8 characters with a mix of characters.");
-      } else {
-        setError("Failed to set password. Please try again or request a new reset link.");
-      }
+      setError(describePasswordError(err) || "Failed to set password. Please try again or request a new reset link.");
       setLoading(false);
     }
   };
