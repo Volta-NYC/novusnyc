@@ -278,7 +278,7 @@ export default function ApplicantsPage() {
     }
   };
 
-  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, placementId = "", interview = false) => {
+  const promoteApplicant = async (app: ApplicationRecord, shouldEmail: boolean, placementId: string, interview = false) => {
     if (!user) throw new Error("not_authenticated");
     const token = await getAuthToken();
     // The Accepted stamp is applied by the promote endpoint once the member row
@@ -345,6 +345,10 @@ export default function ApplicantsPage() {
 
   const handleAcceptFromModal = async () => {
     if (!acceptModalApp) return;
+    if (!acceptPlacement) {
+      setStatusMessage("Choose a team before accepting.");
+      return;
+    }
     setBulkPromoting(true);
     try {
       const action = await promoteApplicant(acceptModalApp, acceptSendEmail, acceptPlacement, acceptInterview);
@@ -357,33 +361,6 @@ export default function ApplicantsPage() {
       setAcceptInterview(false);
     } catch (err) {
       setStatusMessage(err instanceof Error ? err.message : `Could not accept ${acceptModalApp.fullName}.`);
-    } finally {
-      setBulkPromoting(false);
-    }
-  };
-
-  const skipInterviewForSelected = async () => {
-    if (!canEdit || selected.size === 0) {
-      setStatusMessage("Select at least one applicant.");
-      return;
-    }
-    setBulkPromoting(true);
-    try {
-      const selectedApps = applications.filter((app) => selected.has(app.id));
-      let ok = 0;
-      let failed = 0;
-      for (const app of selectedApps) {
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          await promoteApplicant(app, true);
-          ok += 1;
-        } catch {
-          failed += 1;
-        }
-      }
-      clear();
-      setStatusMessage(`Accept selected complete — ${ok} succeeded, ${failed} failed.`);
-      await fetchApplicantsData();
     } finally {
       setBulkPromoting(false);
     }
@@ -493,7 +470,7 @@ export default function ApplicantsPage() {
                 if (!e.target.value) setAcceptInterview(false);
               }}
             >
-              <option value="">General acceptance (no team)</option>
+              <option value="" disabled>Choose a team…</option>
               {ACCEPTANCE_PLACEMENTS.map((p) => (
                 <option key={p.id} value={p.id}>{p.department} — {p.label}</option>
               ))}
@@ -523,7 +500,7 @@ export default function ApplicantsPage() {
         </div>
         <div className="flex justify-end gap-2 mt-5">
           <Btn variant="ghost" onClick={() => setAcceptModalApp(null)} disabled={bulkPromoting}>Cancel</Btn>
-          <Btn variant="primary" onClick={() => void handleAcceptFromModal()} disabled={bulkPromoting}>
+          <Btn variant="primary" onClick={() => void handleAcceptFromModal()} disabled={bulkPromoting || !acceptPlacement}>
             {bulkPromoting ? "Accepting..." : "Accept"}
           </Btn>
         </div>
@@ -844,14 +821,6 @@ export default function ApplicantsPage() {
 
       {canEdit && (
         <BulkActionBar count={selectedCount} onClear={clear}>
-          <Btn
-            size="sm"
-            variant="primary"
-            onClick={() => void skipInterviewForSelected()}
-            disabled={bulkPromoting}
-          >
-            {bulkPromoting ? "Accepting…" : "Accept"}
-          </Btn>
           {canManageStatus && (
             <>
               <select
