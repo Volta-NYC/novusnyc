@@ -11,6 +11,7 @@ const ALLOWED_FIELDS = new Set([
   "statusManualOverride",
   "notes",
   "finalDecisionRole",
+  "marketingSubtrack",
   // Allow admin tooling to migrate legacy grade labels (e.g. "Senior") to the
   // class-of-YYYY equivalent so applicant records stop drifting each fall.
   "grade",

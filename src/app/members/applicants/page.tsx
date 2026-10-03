@@ -308,6 +308,12 @@ export default function ApplicantsPage() {
         : `Could not add ${app.fullName} to the member directory.`);
     }
     const promoted = await promoteRes.json() as { action?: string };
+    // The team is only ever an email choice otherwise; keep it on the record so
+    // the applicant list and the member's drawer show where they were placed.
+    const subtrack = ACCEPTANCE_PLACEMENTS.find((p) => p.id === placementId)?.subtrack;
+    if (subtrack && subtrack !== app.marketingSubtrack) {
+      await updateApplicantServer(app.id, { marketingSubtrack: subtrack });
+    }
     if (shouldEmail) {
       const emailRes = await fetch("/api/members/applicants/decision-email", {
         method: "POST",

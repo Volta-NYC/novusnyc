@@ -1,4 +1,5 @@
 import { EMAIL } from "@/lib/mail";
+import type { MarketingSubtrack } from "@/data";
 
 /**
  * Where an accepted applicant lands, and which acceptance email that earns them.
@@ -21,6 +22,8 @@ export interface AcceptancePlacement {
   interviewTemplateKey: string;
   ccRole: AcceptanceCcRole;
   needsWhatsapp: boolean;
+  // What gets recorded on the application when someone is accepted here.
+  subtrack: MarketingSubtrack | null;
 }
 
 export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
@@ -32,6 +35,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     interviewTemplateKey: "acceptance_interview_outreach",
     ccRole: "coordinator",
     needsWhatsapp: true,
+    subtrack: "Small Business Outreach",
   },
   {
     id: "social",
@@ -41,6 +45,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     interviewTemplateKey: "acceptance_interview_social",
     ccRole: "coordinator",
     needsWhatsapp: true,
+    subtrack: "Novus Social Media & Branding",
   },
   {
     id: "grants",
@@ -50,6 +55,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     interviewTemplateKey: "acceptance_interview_grants",
     ccRole: "coordinator",
     needsWhatsapp: true,
+    subtrack: "Grants & Funding",
   },
   {
     id: "ambassadors",
@@ -59,6 +65,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     interviewTemplateKey: "acceptance_interview_ambassadors",
     ccRole: "coordinator",
     needsWhatsapp: true,
+    subtrack: "Novus Ambassadors",
   },
   {
     id: "tech",
@@ -68,6 +75,7 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     interviewTemplateKey: "acceptance_interview_tech",
     ccRole: "tahmid",
     needsWhatsapp: false,
+    subtrack: null,
   },
 ];
 
