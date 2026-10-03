@@ -1,16 +1,13 @@
-import { EMAIL } from "@/lib/mail";
 import type { MarketingSubtrack } from "@/data";
 
 /**
  * Where an accepted applicant lands, and which acceptance email that earns them.
  *
- * `ccRole` is the address the applicant sees in the CC line. It is visible on
- * purpose: each template's copy refers to whoever is copied ("reply all",
- * "I've CC'd Tahmid Islam"), so a silent BCC there would make the email lie.
- * Marketing placements copy the coordinator address from site_settings, which
- * is a personal Gmail until that person has a Novus mailbox.
+ * Everyone accepted is copied on the addresses in the "CC on acceptances"
+ * setting. The copy is visible on purpose: the templates ask people to "reply
+ * all" and the Tech one says it copied Tahmid, so a silent BCC would make the
+ * email lie.
  */
-export type AcceptanceCcRole = "coordinator" | "tahmid";
 
 export interface AcceptancePlacement {
   id: string;
@@ -20,7 +17,6 @@ export interface AcceptancePlacement {
   // Same welcome, plus a link to book an interview. Sent when "Interview?" is
   // ticked on accept.
   interviewTemplateKey: string;
-  ccRole: AcceptanceCcRole;
   needsWhatsapp: boolean;
   // What gets recorded on the application when someone is accepted here.
   subtrack: MarketingSubtrack | null;
@@ -33,7 +29,6 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     department: "Marketing",
     templateKey: "acceptance_outreach",
     interviewTemplateKey: "acceptance_interview_outreach",
-    ccRole: "coordinator",
     needsWhatsapp: true,
     subtrack: "Small Business Outreach",
   },
@@ -43,7 +38,6 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     department: "Marketing",
     templateKey: "acceptance_social",
     interviewTemplateKey: "acceptance_interview_social",
-    ccRole: "coordinator",
     needsWhatsapp: true,
     subtrack: "Novus Social Media & Branding",
   },
@@ -53,7 +47,6 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     department: "Marketing",
     templateKey: "acceptance_grants",
     interviewTemplateKey: "acceptance_interview_grants",
-    ccRole: "coordinator",
     needsWhatsapp: true,
     subtrack: "Grants & Funding",
   },
@@ -63,7 +56,6 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     department: "Marketing",
     templateKey: "acceptance_ambassadors",
     interviewTemplateKey: "acceptance_interview_ambassadors",
-    ccRole: "coordinator",
     needsWhatsapp: true,
     subtrack: "Novus Ambassadors",
   },
@@ -73,7 +65,6 @@ export const ACCEPTANCE_PLACEMENTS: AcceptancePlacement[] = [
     department: "Tech",
     templateKey: "acceptance_tech",
     interviewTemplateKey: "acceptance_interview_tech",
-    ccRole: "tahmid",
     needsWhatsapp: false,
     subtrack: null,
   },
@@ -83,9 +74,6 @@ export function findAcceptancePlacement(id: string): AcceptancePlacement | undef
   return ACCEPTANCE_PLACEMENTS.find((p) => p.id === id);
 }
 
-export function acceptanceCcAddress(
-  placement: AcceptancePlacement,
-  coordinatorEmail: string,
-): string {
-  return placement.ccRole === "tahmid" ? EMAIL.tahmid : coordinatorEmail.trim();
+export function acceptanceCcAddress(ccSetting: string): string {
+  return ccSetting.trim();
 }

@@ -4,7 +4,6 @@ import { getSupabaseAdmin, writeAuditLog } from "@/lib/supabaseAdmin";
 import { createTransportForFrom, getDefaultFromAddress } from "@/lib/server/smtp";
 import { renderAutomationEmail, renderEmail, type RenderOutcome } from "@/lib/server/templateRenderer";
 import { acceptanceCcAddress, findAcceptancePlacement } from "@/lib/members/acceptancePlacements";
-import { EMAIL } from "@/lib/mail";
 
 export const runtime = "nodejs";
 
@@ -64,7 +63,6 @@ export async function POST(req: NextRequest) {
 
   let rendered: RenderOutcome;
   let cc: string | undefined;
-  let bcc: string | undefined;
 
   if (placement) {
     const { data: settings } = await sb
@@ -92,10 +90,7 @@ export async function POST(req: NextRequest) {
       whatsappLink,
       bookingLink,
     });
-    // The CC is named in the copy, so it stays visible. The shared inbox is
-    // blind-copied purely so the team keeps a record of what went out.
-    cc = acceptanceCcAddress(placement, String(settings?.acceptance_cc_email ?? "")) || undefined;
-    bcc = EMAIL.info;
+    cc = acceptanceCcAddress(String(settings?.acceptance_cc_email ?? "")) || undefined;
   } else {
     rendered = await renderAutomationEmail("applicant_accepted", { firstName, applicantName, link: portalLink });
   }
@@ -110,7 +105,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "smtp_not_configured" }, { status: 500 });
   }
-  await transporter.sendMail({ to: applicantEmail, cc, bcc, ...rendered.email });
+  await transporter.sendMail({ to: applicantEmail, cc, ...rendered.email });
 
   await writeAuditLog({
     action: "decision_email",

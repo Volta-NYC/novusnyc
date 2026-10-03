@@ -564,7 +564,7 @@ export default function ApplicantsPage() {
               </Field>
             </div>
             <div className="min-w-[230px] flex-1">
-              <Field label="CC on Marketing acceptances">
+              <Field label="CC on acceptances">
                 <Input
                   value={ccEmail}
                   onChange={(e) => setCcEmail(e.target.value)}
