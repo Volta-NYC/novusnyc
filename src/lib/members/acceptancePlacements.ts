@@ -1,3 +1,4 @@
+import { EMAIL } from "@/lib/mail";
 import type { MarketingSubtrack } from "@/data";
 
 /**
@@ -74,6 +75,11 @@ export function findAcceptancePlacement(id: string): AcceptancePlacement | undef
   return ACCEPTANCE_PLACEMENTS.find((p) => p.id === id);
 }
 
-export function acceptanceCcAddress(ccSetting: string): string {
-  return ccSetting.trim();
+export function acceptanceCcAddress(placement: AcceptancePlacement, marketingCc: string): string {
+  // Tech copies Tahmid directly; the Marketing teams copy whoever the "CC on
+  // marketing acceptances" setting names. The shared inbox is always copied too,
+  // so all three owners see every acceptance without being listed one by one.
+  const named = placement.department === "Tech" ? EMAIL.tahmid : marketingCc.trim();
+  const alreadyCopiesInbox = named.toLowerCase().includes(EMAIL.info);
+  return [named, alreadyCopiesInbox ? "" : EMAIL.info].filter(Boolean).join(", ");
 }

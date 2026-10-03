@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       whatsappLink,
       bookingLink,
     });
-    cc = acceptanceCcAddress(String(settings?.acceptance_cc_email ?? "")) || undefined;
+    cc = acceptanceCcAddress(placement, String(settings?.acceptance_cc_email ?? "")) || undefined;
   } else {
     rendered = await renderAutomationEmail("applicant_accepted", { firstName, applicantName, link: portalLink });
   }
