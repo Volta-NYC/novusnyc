@@ -174,7 +174,7 @@ export default function RootLayout({
               founder: {
                 "@type": "Person",
                 name: "Ethan Zhang",
-                jobTitle: "Co-Founder & Executive Director",
+                jobTitle: "Executive Director",
                 affiliation: { "@id": `${SITE_URL}/#organization` },
                 url: `${SITE_URL}/about#leadership`,
               },

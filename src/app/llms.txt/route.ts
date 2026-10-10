@@ -85,8 +85,8 @@ Analyst, Associate, Senior Associate, and Project Lead.
 
 ## Leadership
 
-- **Ethan Zhang** — Co-Founder & Executive Director
-- **Andrew Chin** — Co-Founder
+- **Ethan Zhang** — Executive Director
+- **Andrew Chin** — Executive Director
 - **Tahmid Islam** — Director of Tech
 - **Ellie Mak** — Director of Finance and Marketing
 

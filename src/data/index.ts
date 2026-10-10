@@ -299,8 +299,8 @@ export type LeadershipExperience = {
 export const teamMembers: LeadershipMember[] = [
   {
     name: "Ethan Zhang",
-    role: "Co-Founder",
-    roleDetails: "Co-Founder and Executive Director, setting organization-wide strategy, partnerships, and growth while developing and maintaining the website and backend platform Novus runs on. Works with the finance and marketing leads on planning across the organization.",
+    role: "Executive Director",
+    roleDetails: "Executive Director, setting organization-wide strategy, partnerships, and growth while developing and maintaining the website and backend platform Novus runs on. Works with the finance and marketing leads on planning across the organization.",
     email: EMAIL.ethan,
     linkedin: "https://www.linkedin.com/in/ez09",
     initial: "E",
@@ -330,8 +330,8 @@ export const teamMembers: LeadershipMember[] = [
   },
   {
     name: "Andrew Chin",
-    role: "Co-Founder",
-    roleDetails: "Co-Founder and Executive Director, guiding organization-wide strategy, partnerships, and growth while building the systems that help student teams deliver for local businesses.",
+    role: "Executive Director",
+    roleDetails: "Executive Director, guiding organization-wide strategy, partnerships, and growth while building the systems that help student teams deliver for local businesses.",
     email: EMAIL.andrew,
     linkedin: "https://www.linkedin.com/in/andrew-chin28/",
     initial: "A",

@@ -67,7 +67,7 @@ export default function LeadershipProfiles({ members }: { members: LeadershipMem
               >
                 <div className="aspect-[4/5] bg-n-border flex items-center justify-center overflow-hidden">
                   {member.photo ? (
-                    <Image src={member.photo} alt={member.name} width={400} height={533} className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.025]" />
+                    <Image src={member.photo} alt={member.name} width={400} height={533} sizes="(max-width: 639px) 50vw, (max-width: 1087px) 25vw, 247px" className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.025]" />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-n-orange/15 border-2 border-n-orange/25 flex items-center justify-center">
                       <span className="font-display font-bold text-n-orange text-xl">{member.initial}</span>
@@ -104,7 +104,7 @@ export default function LeadershipProfiles({ members }: { members: LeadershipMem
           <div className="grid gap-7 p-5 sm:grid-cols-[180px_1fr] sm:p-7">
             <div className="overflow-hidden rounded-xl border border-n-border bg-white aspect-[4/5] max-w-[220px]">
               {selected.photo ? (
-                <Image src={selected.photo} alt={selected.name} width={400} height={533} className="w-full h-full object-cover object-center" />
+                <Image src={selected.photo} alt={selected.name} width={400} height={533} sizes="(max-width: 639px) 220px, 180px" className="w-full h-full object-cover object-center" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <span className="font-display font-bold text-n-orange text-4xl">{selected.initial}</span>
